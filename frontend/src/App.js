@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { Container } from 'react-bootstrap';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
@@ -20,40 +20,38 @@ import './assessment-animations.css';
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <div className="app-container d-flex flex-column min-vh-100">
-          <Header />
-          <Container className="flex-grow-1 py-4">
-            <Routes>
-              <Route path="/" element={<Navigate to="/login" />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/dashboard" element={
-                <PrivateRoute>
-                  <Dashboard />
-                </PrivateRoute>
-              } />
-              <Route path="/assessment/:id?" element={
-                <PrivateRoute>
-                  <Assessment />
-                </PrivateRoute>
-              } />
-              <Route path="/results/:id" element={
-                <PrivateRoute>
-                  <Results />
-                </PrivateRoute>
-              } />
-              <Route path="/settings/*" element={
-                <PrivateRoute>
-                  <UserSettings />
-                </PrivateRoute>
-              } />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Container>
-          <Footer />
-        </div>
-      </Router>
+      <div className="app-container d-flex flex-column min-vh-100">
+        <Header />
+        <Container className="flex-grow-1 py-4">
+          <Routes>
+            <Route path="/" element={<Navigate to="/login" />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/dashboard" element={
+              <PrivateRoute>
+                <Dashboard />
+              </PrivateRoute>
+            } />
+            <Route path="/assessment/:id?" element={
+              <PrivateRoute>
+                <Assessment />
+              </PrivateRoute>
+            } />
+            <Route path="/results/:id" element={
+              <PrivateRoute>
+                <Results />
+              </PrivateRoute>
+            } />
+            <Route path="/settings/*" element={
+              <PrivateRoute>
+                <UserSettings />
+              </PrivateRoute>
+            } />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Container>
+        <Footer />
+      </div>
     </AuthProvider>
   );
 }
