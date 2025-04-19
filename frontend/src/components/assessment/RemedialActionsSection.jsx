@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Button, Row, Col, Form, Table, Badge, Alert, OverlayTrigger, Tooltip, Tabs, Tab, Dropdown, ButtonGroup, Modal, InputGroup } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faClipboardCheck, faExclamationTriangle, faInfoCircle, faDownload, faFilter, faSearch, faSortAmountDown, faSortAmountUp, faFileAlt, faPaperclip, faCalendarAlt, faCheck, faTimes, faEdit, faTrash, faPlus, faFileExport, faListAlt, faTable, faChartBar, faEye, faHistory } from '@fortawesome/free-solid-svg-icons';
@@ -467,86 +467,79 @@ const RemedialActionsSection = ({ assessmentData, onActionStatusChange }) => {
             </Dropdown>
           </Col>
         </Row>
-
+        
         {loading ? (
-          <div className="text-center p-4">
+          <div className="text-center p-5">
             <p>Ładowanie działań naprawczych...</p>
           </div>
         ) : sortedActions.length > 0 ? (
-          <Table striped bordered hover responsive>
+          <Table responsive hover className="actions-table">
             <thead>
               <tr>
-                <th style={{width: '30%'}}>
-                  <div 
-                    className="d-flex justify-content-between align-items-center cursor-pointer"
-                    onClick={() => handleSortChange('title')}
-                  >
-                    Tytuł
-                    {sortField === 'title' && (
-                      <FontAwesomeIcon 
-                        icon={sortDirection === 'asc' ? faSortAmountUp : faSortAmountDown} 
-                        size="sm"
-                      />
-                    )}
-                  </div>
+                <th 
+                  className="sortable-header"
+                  onClick={() => handleSortChange('title')}
+                >
+                  Tytuł
+                  {sortField === 'title' && (
+                    <FontAwesomeIcon 
+                      icon={sortDirection === 'asc' ? faSortAmountUp : faSortAmountDown} 
+                      className="ms-2"
+                    />
+                  )}
                 </th>
-                <th style={{width: '15%'}}>
-                  <div 
-                    className="d-flex justify-content-between align-items-center cursor-pointer"
-                    onClick={() => handleSortChange('priority')}
-                  >
-                    Priorytet
-                    {sortField === 'priority' && (
-                      <FontAwesomeIcon 
-                        icon={sortDirection === 'asc' ? faSortAmountUp : faSortAmountDown} 
-                        size="sm"
-                      />
-                    )}
-                  </div>
+                <th 
+                  className="sortable-header"
+                  onClick={() => handleSortChange('priority')}
+                >
+                  Priorytet
+                  {sortField === 'priority' && (
+                    <FontAwesomeIcon 
+                      icon={sortDirection === 'asc' ? faSortAmountUp : faSortAmountDown} 
+                      className="ms-2"
+                    />
+                  )}
                 </th>
-                <th style={{width: '15%'}}>
-                  <div 
-                    className="d-flex justify-content-between align-items-center cursor-pointer"
-                    onClick={() => handleSortChange('status')}
-                  >
-                    Status
-                    {sortField === 'status' && (
-                      <FontAwesomeIcon 
-                        icon={sortDirection === 'asc' ? faSortAmountUp : faSortAmountDown} 
-                        size="sm"
-                      />
-                    )}
-                  </div>
+                <th 
+                  className="sortable-header"
+                  onClick={() => handleSortChange('status')}
+                >
+                  Status
+                  {sortField === 'status' && (
+                    <FontAwesomeIcon 
+                      icon={sortDirection === 'asc' ? faSortAmountUp : faSortAmountDown} 
+                      className="ms-2"
+                    />
+                  )}
                 </th>
-                <th style={{width: '15%'}}>
-                  <div 
-                    className="d-flex justify-content-between align-items-center cursor-pointer"
-                    onClick={() => handleSortChange('dueDate')}
-                  >
-                    Termin
-                    {sortField === 'dueDate' && (
-                      <FontAwesomeIcon 
-                        icon={sortDirection === 'asc' ? faSortAmountUp : faSortAmountDown} 
-                        size="sm"
-                      />
-                    )}
-                  </div>
+                <th 
+                  className="sortable-header"
+                  onClick={() => handleSortChange('dueDate')}
+                >
+                  Termin
+                  {sortField === 'dueDate' && (
+                    <FontAwesomeIcon 
+                      icon={sortDirection === 'asc' ? faSortAmountUp : faSortAmountDown} 
+                      className="ms-2"
+                    />
+                  )}
                 </th>
-                <th style={{width: '15%'}}>Przypisane do</th>
-                <th style={{width: '10%'}}>Akcje</th>
+                <th>Przypisane do</th>
+                <th>Akcje</th>
               </tr>
             </thead>
             <tbody>
               {sortedActions.map(action => (
                 <tr key={action.id}>
                   <td>
-                    {action.title}
-                    {action.attachments.length > 0 && (
-                      <Badge bg="info" className="ms-2">
-                        <FontAwesomeIcon icon={faPaperclip} className="me-1" />
-                        {action.attachments.length}
-                      </Badge>
-                    )}
+                    <div className="d-flex align-items-center">
+                      <div>
+                        <span className="action-title">{action.title}</span>
+                        <div className="small text-muted text-truncate" style={{ maxWidth: '300px' }}>
+                          {action.description}
+                        </div>
+                      </div>
+                    </div>
                   </td>
                   <td>
                     <Badge bg={getPriorityColor(action.priority)}>
@@ -560,15 +553,25 @@ const RemedialActionsSection = ({ assessmentData, onActionStatusChange }) => {
                   </td>
                   <td>
                     <div className="d-flex align-items-center">
-                      <FontAwesomeIcon icon={faCalendarAlt} className="me-1" />
+                      <FontAwesomeIcon icon={faCalendarAlt} className="me-2" />
                       <span className={isOverdue(action.dueDate, action.status) ? 'text-danger fw-bold' : ''}>
                         {new Date(action.dueDate).toLocaleDateString()}
                       </span>
                       {isOverdue(action.dueDate, action.status) && (
-                        <Badge bg="danger" className="ms-1">Przekroczony</Badge>
+                        <OverlayTrigger
+                          placement="top"
+                          overlay={<Tooltip>Termin przekroczony!</Tooltip>}
+                        >
+                          <FontAwesomeIcon icon={faExclamationTriangle} className="ms-2 text-danger" />
+                        </OverlayTrigger>
                       )}
                       {isApproaching(action.dueDate, action.status) && !isOverdue(action.dueDate, action.status) && (
-                        <Badge bg="warning" className="ms-1">Zbliża się</Badge>
+                        <OverlayTrigger
+                          placement="top"
+                          overlay={<Tooltip>Termin zbliża się!</Tooltip>}
+                        >
+                          <FontAwesomeIcon icon={faInfoCircle} className="ms-2 text-warning" />
+                        </OverlayTrigger>
                       )}
                     </div>
                   </td>
@@ -581,36 +584,10 @@ const RemedialActionsSection = ({ assessmentData, onActionStatusChange }) => {
                         setSelectedAction(action);
                         setShowActionModal(true);
                       }}
-                      className="me-1"
                     >
-                      <FontAwesomeIcon icon={faEye} />
+                      <FontAwesomeIcon icon={faEye} className="me-1" />
+                      Szczegóły
                     </Button>
-                    <Dropdown as={ButtonGroup} size="sm">
-                      <Dropdown.Toggle variant="outline-secondary" id={`dropdown-action-${action.id}`}>
-                        <FontAwesomeIcon icon={faEdit} />
-                      </Dropdown.Toggle>
-                      <Dropdown.Menu>
-                        <Dropdown.Header>Zmień status</Dropdown.Header>
-                        <Dropdown.Item 
-                          onClick={() => handleStatusChange(action.id, 'Nowe')}
-                          active={action.status === 'Nowe'}
-                        >
-                          Nowe
-                        </Dropdown.Item>
-                        <Dropdown.Item 
-                          onClick={() => handleStatusChange(action.id, 'W trakcie')}
-                          active={action.status === 'W trakcie'}
-                        >
-                          W trakcie
-                        </Dropdown.Item>
-                        <Dropdown.Item 
-                          onClick={() => handleStatusChange(action.id, 'Zakończone')}
-                          active={action.status === 'Zakończone'}
-                        >
-                          Zakończone
-                        </Dropdown.Item>
-                      </Dropdown.Menu>
-                    </Dropdown>
                   </td>
                 </tr>
               ))}
@@ -618,11 +595,10 @@ const RemedialActionsSection = ({ assessmentData, onActionStatusChange }) => {
           </Table>
         ) : (
           <Alert variant="info">
-            <FontAwesomeIcon icon={faInfoCircle} className="me-2" />
             Brak działań naprawczych spełniających kryteria wyszukiwania.
           </Alert>
         )}
-
+        
         {/* Modal ze szczegółami działania */}
         <Modal 
           show={showActionModal} 
@@ -630,38 +606,25 @@ const RemedialActionsSection = ({ assessmentData, onActionStatusChange }) => {
           size="lg"
         >
           <Modal.Header closeButton>
-            <Modal.Title>Szczegóły działania naprawczego</Modal.Title>
+            <Modal.Title>
+              {selectedAction?.title}
+            </Modal.Title>
           </Modal.Header>
           <Modal.Body>
             {selectedAction && (
-              <>
-                <h5>{selectedAction.title}</h5>
-                <div className="d-flex mb-3">
-                  <Badge bg={getPriorityColor(selectedAction.priority)} className="me-2">
-                    Priorytet: {selectedAction.priority}
-                  </Badge>
-                  <Badge bg={getStatusColor(selectedAction.status)} className="me-2">
-                    Status: {selectedAction.status}
-                  </Badge>
-                  <Badge bg="info">
-                    Obszar: {selectedAction.area}
-                  </Badge>
-                </div>
-                
+              <div>
                 <Row className="mb-3">
                   <Col md={6}>
-                    <p className="mb-1"><strong>Termin:</strong> {new Date(selectedAction.dueDate).toLocaleDateString()}</p>
-                    <p className="mb-1"><strong>Przypisane do:</strong> {selectedAction.assignedTo}</p>
-                    <p className="mb-1"><strong>Utworzono:</strong> {new Date(selectedAction.createdAt).toLocaleDateString()}</p>
-                    <p className="mb-1"><strong>Aktualizacja:</strong> {new Date(selectedAction.updatedAt).toLocaleDateString()}</p>
+                    <p><strong>Priorytet:</strong> <Badge bg={getPriorityColor(selectedAction.priority)}>{selectedAction.priority}</Badge></p>
+                    <p><strong>Status:</strong> <Badge bg={getStatusColor(selectedAction.status)}>{selectedAction.status}</Badge></p>
+                    <p><strong>Termin:</strong> {new Date(selectedAction.dueDate).toLocaleDateString()}</p>
+                    <p><strong>Przypisane do:</strong> {selectedAction.assignedTo}</p>
                   </Col>
                   <Col md={6}>
-                    <p className="mb-1"><strong>Poziom ryzyka:</strong> {selectedAction.riskLevel}</p>
-                    <p className="mb-1">
-                      <strong>Artykuły RODO:</strong> {selectedAction.gdprArticles.map(article => (
-                        <Badge bg="secondary" className="me-1" key={article}>Art. {article}</Badge>
-                      ))}
-                    </p>
+                    <p><strong>Utworzono:</strong> {new Date(selectedAction.createdAt).toLocaleDateString()}</p>
+                    <p><strong>Ostatnia aktualizacja:</strong> {new Date(selectedAction.updatedAt).toLocaleDateString()}</p>
+                    <p><strong>Obszar:</strong> {selectedAction.area}</p>
+                    <p><strong>Poziom ryzyka:</strong> <Badge bg={getPriorityColor(selectedAction.riskLevel)}>{selectedAction.riskLevel}</Badge></p>
                   </Col>
                 </Row>
                 
@@ -670,114 +633,49 @@ const RemedialActionsSection = ({ assessmentData, onActionStatusChange }) => {
                   <p>{selectedAction.description}</p>
                 </div>
                 
-                <Tabs defaultActiveKey="attachments" className="mb-3">
-                  <Tab 
-                    eventKey="attachments" 
-                    title={
-                      <span>
-                        <FontAwesomeIcon icon={faPaperclip} className="me-1" />
-                        Załączniki ({selectedAction.attachments.length})
-                      </span>
-                    }
-                  >
+                <div className="mb-3">
+                  <h6>Artykuły RODO</h6>
+                  <div>
+                    {selectedAction.gdprArticles.map(article => (
+                      <Badge key={article} bg="secondary" className="me-2">
+                        Art. {article}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+                
+                <Tabs defaultActiveKey="status" className="mb-3">
+                  <Tab eventKey="status" title="Zmiana statusu">
                     <div className="mb-3">
-                      <Button 
-                        variant="outline-primary" 
-                        size="sm"
-                        onClick={() => setShowAttachmentModal(true)}
-                      >
-                        <FontAwesomeIcon icon={faPlus} className="me-1" />
-                        Dodaj załącznik
-                      </Button>
+                      <h6>Zmień status</h6>
+                      <ButtonGroup>
+                        <Button 
+                          variant={selectedAction.status === 'Nowe' ? 'primary' : 'outline-primary'} 
+                          onClick={() => handleStatusChange(selectedAction.id, 'Nowe')}
+                          disabled={selectedAction.status === 'Nowe'}
+                        >
+                          Nowe
+                        </Button>
+                        <Button 
+                          variant={selectedAction.status === 'W trakcie' ? 'primary' : 'outline-primary'} 
+                          onClick={() => handleStatusChange(selectedAction.id, 'W trakcie')}
+                          disabled={selectedAction.status === 'W trakcie'}
+                        >
+                          W trakcie
+                        </Button>
+                        <Button 
+                          variant={selectedAction.status === 'Zakończone' ? 'primary' : 'outline-primary'} 
+                          onClick={() => handleStatusChange(selectedAction.id, 'Zakończone')}
+                          disabled={selectedAction.status === 'Zakończone'}
+                        >
+                          Zakończone
+                        </Button>
+                      </ButtonGroup>
                     </div>
-                    
-                    {selectedAction.attachments.length > 0 ? (
-                      <Table striped bordered hover size="sm">
-                        <thead>
-                          <tr>
-                            <th>Nazwa</th>
-                            <th>Typ</th>
-                            <th>Data dodania</th>
-                            <th>Akcje</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {selectedAction.attachments.map(attachment => (
-                            <tr key={attachment.id}>
-                              <td>
-                                <FontAwesomeIcon 
-                                  icon={attachment.type === 'document' ? faFileAlt : faFileAlt} 
-                                  className="me-1"
-                                />
-                                {attachment.name}
-                              </td>
-                              <td>{attachment.type}</td>
-                              <td>{new Date(attachment.uploadedAt).toLocaleDateString()}</td>
-                              <td>
-                                <Button variant="outline-primary" size="sm" className="me-1">
-                                  <FontAwesomeIcon icon={faDownload} />
-                                </Button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </Table>
-                    ) : (
-                      <Alert variant="info">
-                        <FontAwesomeIcon icon={faInfoCircle} className="me-2" />
-                        Brak załączników dla tego działania.
-                      </Alert>
-                    )}
                   </Tab>
-                  <Tab 
-                    eventKey="comments" 
-                    title={
-                      <span>
-                        <FontAwesomeIcon icon={faFileAlt} className="me-1" />
-                        Komentarze ({selectedAction.comments.length})
-                      </span>
-                    }
-                  >
+                  <Tab eventKey="history" title="Historia zmian">
                     <div className="mb-3">
-                      <Button 
-                        variant="outline-primary" 
-                        size="sm"
-                        onClick={() => setShowCommentModal(true)}
-                      >
-                        <FontAwesomeIcon icon={faPlus} className="me-1" />
-                        Dodaj komentarz
-                      </Button>
-                    </div>
-                    
-                    {selectedAction.comments.length > 0 ? (
-                      <div>
-                        {selectedAction.comments.map(comment => (
-                          <div key={comment.id} className="p-3 mb-2 border rounded">
-                            <div className="d-flex justify-content-between mb-2">
-                              <strong>{comment.user}</strong>
-                              <small>{new Date(comment.date).toLocaleDateString()}</small>
-                            </div>
-                            <p className="mb-0">{comment.text}</p>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <Alert variant="info">
-                        <FontAwesomeIcon icon={faInfoCircle} className="me-2" />
-                        Brak komentarzy dla tego działania.
-                      </Alert>
-                    )}
-                  </Tab>
-                  <Tab 
-                    eventKey="history" 
-                    title={
-                      <span>
-                        <FontAwesomeIcon icon={faHistory} className="me-1" />
-                        Historia statusów
-                      </span>
-                    }
-                  >
-                    {selectedAction.statusHistory.length > 0 ? (
+                      <h6>Historia zmian statusu</h6>
                       <Table striped bordered hover size="sm">
                         <thead>
                           <tr>
@@ -787,28 +685,97 @@ const RemedialActionsSection = ({ assessmentData, onActionStatusChange }) => {
                           </tr>
                         </thead>
                         <tbody>
-                          {[...selectedAction.statusHistory].reverse().map((history, index) => (
+                          {selectedAction.statusHistory.map((history, index) => (
                             <tr key={index}>
                               <td>{new Date(history.date).toLocaleDateString()}</td>
-                              <td>
-                                <Badge bg={getStatusColor(history.status)}>
-                                  {history.status}
-                                </Badge>
-                              </td>
+                              <td><Badge bg={getStatusColor(history.status)}>{history.status}</Badge></td>
                               <td>{history.user}</td>
                             </tr>
                           ))}
                         </tbody>
                       </Table>
-                    ) : (
-                      <Alert variant="info">
-                        <FontAwesomeIcon icon={faInfoCircle} className="me-2" />
-                        Brak historii statusów dla tego działania.
-                      </Alert>
-                    )}
+                    </div>
+                  </Tab>
+                  <Tab eventKey="attachments" title="Załączniki">
+                    <div className="mb-3">
+                      <div className="d-flex justify-content-between align-items-center mb-3">
+                        <h6 className="mb-0">Załączniki</h6>
+                        <Button 
+                          variant="outline-primary" 
+                          size="sm"
+                          onClick={() => setShowAttachmentModal(true)}
+                        >
+                          <FontAwesomeIcon icon={faPlus} className="me-1" />
+                          Dodaj załącznik
+                        </Button>
+                      </div>
+                      {selectedAction.attachments.length > 0 ? (
+                        <Table striped bordered hover size="sm">
+                          <thead>
+                            <tr>
+                              <th>Nazwa</th>
+                              <th>Typ</th>
+                              <th>Data dodania</th>
+                              <th>Akcje</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {selectedAction.attachments.map(attachment => (
+                              <tr key={attachment.id}>
+                                <td>{attachment.name}</td>
+                                <td>{attachment.type}</td>
+                                <td>{new Date(attachment.uploadedAt).toLocaleDateString()}</td>
+                                <td>
+                                  <Button variant="outline-primary" size="sm">
+                                    <FontAwesomeIcon icon={faDownload} />
+                                  </Button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </Table>
+                      ) : (
+                        <Alert variant="info">
+                          Brak załączników dla tego działania.
+                        </Alert>
+                      )}
+                    </div>
+                  </Tab>
+                  <Tab eventKey="comments" title="Komentarze">
+                    <div className="mb-3">
+                      <div className="d-flex justify-content-between align-items-center mb-3">
+                        <h6 className="mb-0">Komentarze</h6>
+                        <Button 
+                          variant="outline-primary" 
+                          size="sm"
+                          onClick={() => setShowCommentModal(true)}
+                        >
+                          <FontAwesomeIcon icon={faPlus} className="me-1" />
+                          Dodaj komentarz
+                        </Button>
+                      </div>
+                      {selectedAction.comments.length > 0 ? (
+                        <div>
+                          {selectedAction.comments.map(comment => (
+                            <Card key={comment.id} className="mb-2">
+                              <Card.Body>
+                                <div className="d-flex justify-content-between">
+                                  <small className="text-muted">{comment.user} - {new Date(comment.date).toLocaleDateString()}</small>
+                                </div>
+                                <p className="mb-0 mt-2">{comment.text}</p>
+                              </Card.Body>
+                            </Card>
+                          ))}
+                        </div>
+                      ) : (
+                        <Alert variant="info">
+                          Brak komentarzy dla tego działania.
+                        </Alert>
+                      )}
+                    </div>
                   </Tab>
                 </Tabs>
-              </>
+              </div>
             )}
           </Modal.Body>
           <Modal.Footer>
@@ -817,7 +784,7 @@ const RemedialActionsSection = ({ assessmentData, onActionStatusChange }) => {
             </Button>
           </Modal.Footer>
         </Modal>
-
+        
         {/* Modal dodawania komentarza */}
         <Modal 
           show={showCommentModal} 
@@ -829,12 +796,11 @@ const RemedialActionsSection = ({ assessmentData, onActionStatusChange }) => {
           <Modal.Body>
             <Form.Group>
               <Form.Label>Treść komentarza</Form.Label>
-              <Form.Control
-                as="textarea"
+              <Form.Control 
+                as="textarea" 
                 rows={3}
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
-                placeholder="Wprowadź treść komentarza..."
               />
             </Form.Group>
           </Modal.Body>
@@ -847,7 +813,7 @@ const RemedialActionsSection = ({ assessmentData, onActionStatusChange }) => {
             </Button>
           </Modal.Footer>
         </Modal>
-
+        
         {/* Modal dodawania załącznika */}
         <Modal 
           show={showAttachmentModal} 
@@ -859,11 +825,10 @@ const RemedialActionsSection = ({ assessmentData, onActionStatusChange }) => {
           <Modal.Body>
             <Form.Group className="mb-3">
               <Form.Label>Nazwa załącznika</Form.Label>
-              <Form.Control
+              <Form.Control 
                 type="text"
                 value={newAttachment.name}
                 onChange={(e) => setNewAttachment({...newAttachment, name: e.target.value})}
-                placeholder="Wprowadź nazwę załącznika..."
               />
             </Form.Group>
             <Form.Group>
@@ -878,16 +843,6 @@ const RemedialActionsSection = ({ assessmentData, onActionStatusChange }) => {
                 <option value="presentation">Prezentacja</option>
                 <option value="other">Inny</option>
               </Form.Select>
-            </Form.Group>
-            <Form.Group className="mt-3">
-              <Form.Label>Plik</Form.Label>
-              <Form.Control
-                type="file"
-                disabled
-              />
-              <Form.Text className="text-muted">
-                Funkcja przesyłania plików będzie dostępna w pełnej wersji aplikacji.
-              </Form.Text>
             </Form.Group>
           </Modal.Body>
           <Modal.Footer>
