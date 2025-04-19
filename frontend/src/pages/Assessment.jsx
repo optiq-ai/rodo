@@ -1,8 +1,8 @@
 import React from 'react';
-import { Container, Row, Col, Card, Button, Alert } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button, Alert, Tabs, Tab } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faShieldAlt, faChartBar, faClipboardCheck, faHistory, faFileAlt, faPlus } from '@fortawesome/free-solid-svg-icons';
+import { faShieldAlt, faChartBar, faClipboardCheck, faHistory, faFileAlt, faPlus, faExclamationTriangle, faCheckCircle } from '@fortawesome/free-solid-svg-icons';
 import RiskScoringSystem from '../components/assessment/RiskScoringSystem';
 import AssessmentVisualizations from '../components/assessment/AssessmentVisualizations';
 import RemedialActionsSection from '../components/assessment/RemedialActionsSection';
@@ -20,6 +20,7 @@ const Assessment = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview');
   
   // Pobieranie danych oceny
   useEffect(() => {
@@ -192,7 +193,7 @@ const Assessment = () => {
                             <FontAwesomeIcon icon={faFileAlt} className="me-2" />
                             Eksportuj raport
                           </Button>
-                          <Button variant="outline-primary" size="sm">
+                          <Button variant="outline-primary" size="sm" onClick={() => setActiveTab('history')}>
                             <FontAwesomeIcon icon={faHistory} className="me-2" />
                             Pokaż historię zmian
                           </Button>
@@ -203,24 +204,96 @@ const Assessment = () => {
                 </Row>
               </div>
               
-              <RiskScoringSystem 
-                assessmentData={assessmentData} 
-                onRiskScoreChange={handleRiskScoreChange} 
-              />
-              
-              <AssessmentVisualizations 
-                assessmentData={assessmentData} 
-              />
-              
-              <RemedialActionsSection 
-                assessmentData={assessmentData} 
-                onActionStatusChange={handleActionStatusChange} 
-              />
-              
-              <ChangeHistoryFeature 
-                assessmentData={assessmentData} 
-                onHistorySelect={handleHistorySelect} 
-              />
+              <Card className="mb-4">
+                <Card.Header>
+                  <Tabs
+                    activeKey={activeTab}
+                    onSelect={(k) => setActiveTab(k)}
+                    className="border-bottom-0"
+                  >
+                    <Tab 
+                      eventKey="overview" 
+                      title={
+                        <span>
+                          <FontAwesomeIcon icon={faShieldAlt} className="me-2" />
+                          Przegląd
+                        </span>
+                      }
+                    />
+                    <Tab 
+                      eventKey="risk" 
+                      title={
+                        <span>
+                          <FontAwesomeIcon icon={faExclamationTriangle} className="me-2" />
+                          Ocena ryzyka
+                        </span>
+                      }
+                    />
+                    <Tab 
+                      eventKey="remedial" 
+                      title={
+                        <span>
+                          <FontAwesomeIcon icon={faClipboardCheck} className="me-2" />
+                          Działania naprawcze
+                        </span>
+                      }
+                    />
+                    <Tab 
+                      eventKey="history" 
+                      title={
+                        <span>
+                          <FontAwesomeIcon icon={faHistory} className="me-2" />
+                          Historia zmian
+                        </span>
+                      }
+                    />
+                  </Tabs>
+                </Card.Header>
+                <Card.Body>
+                  {/* Przegląd */}
+                  {activeTab === 'overview' && (
+                    <div>
+                      <h4 className="mb-4">Przegląd oceny RODO</h4>
+                      <AssessmentVisualizations 
+                        assessmentData={assessmentData} 
+                      />
+                    </div>
+                  )}
+                  
+                  {/* Ocena ryzyka */}
+                  {activeTab === 'risk' && (
+                    <div>
+                      <h4 className="mb-4">Ocena ryzyka</h4>
+                      <RiskScoringSystem 
+                        assessmentData={assessmentData} 
+                        onRiskScoreChange={handleRiskScoreChange} 
+                      />
+                    </div>
+                  )}
+                  
+                  {/* Działania naprawcze */}
+                  {activeTab === 'remedial' && (
+                    <div>
+                      <h4 className="mb-4">Działania naprawcze</h4>
+                      <RemedialActionsSection 
+                        assessmentData={assessmentData} 
+                        onActionStatusChange={handleActionStatusChange} 
+                      />
+                    </div>
+                  )}
+                  
+                  {/* Historia zmian */}
+                  {activeTab === 'history' && (
+                    <div>
+                      <h4 className="mb-4">Historia zmian</h4>
+                      <ChangeHistoryFeature 
+                        assessmentData={assessmentData} 
+                        onHistorySelect={handleHistorySelect} 
+                      />
+                    </div>
+                  )}
+                </Card.Body>
+              </Card>
             </>
           )}
         </Col>
