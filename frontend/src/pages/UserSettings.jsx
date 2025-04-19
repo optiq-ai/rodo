@@ -1,7 +1,7 @@
 import React from 'react';
 import { Container, Row, Col, Card, Form, Button, Alert, Tabs, Tab, Badge } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUser, faKey, faBuilding, faCreditCard, faSave, faUndo } from '@fortawesome/free-solid-svg-icons';
+import { faUser, faKey, faBuilding, faCreditCard, faSave, faUndo, faToggleOn, faToggleOff, faCog } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../hooks/useAuth';
 
 const UserSettings = () => {
@@ -51,6 +51,17 @@ const UserSettings = () => {
     assessmentsUsed: 0
   });
 
+  // Konfiguracja widgetów
+  const [widgetsConfig, setWidgetsConfig] = React.useState({
+    recentAssessments: true,
+    statistics: true,
+    riskOverview: true,
+    subscriptionInfo: true,
+    quickActions: true,
+    comparisonChart: false,
+    remedialActions: false
+  });
+
   // Pobieranie danych użytkownika
   React.useEffect(() => {
     // Symulacja pobierania danych z API
@@ -98,6 +109,19 @@ const UserSettings = () => {
         };
         
         setSubscriptionData(mockSubscriptionData);
+
+        // Tymczasowe dane konfiguracji widgetów
+        const mockWidgetsConfig = {
+          recentAssessments: true,
+          statistics: true,
+          riskOverview: true,
+          subscriptionInfo: true,
+          quickActions: true,
+          comparisonChart: false,
+          remedialActions: false
+        };
+
+        setWidgetsConfig(mockWidgetsConfig);
         
       } catch (error) {
         console.error('Błąd podczas pobierania danych użytkownika:', error);
@@ -141,6 +165,14 @@ const UserSettings = () => {
     setSubscriptionData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
+  // Obsługa zmiany konfiguracji widgetów
+  const handleWidgetsConfigChange = (name, checked) => {
+    setWidgetsConfig(prev => ({
+      ...prev,
+      [name]: checked
     }));
   };
 
@@ -246,6 +278,40 @@ const UserSettings = () => {
     }
   };
 
+  // Zapisywanie konfiguracji widgetów
+  const handleSaveWidgetsConfig = async (e) => {
+    e.preventDefault();
+    try {
+      // W rzeczywistości będzie to wywołanie do backendu
+      // await userService.updateWidgetsConfig(widgetsConfig);
+      
+      // Symulacja zapisywania
+      setTimeout(() => {
+        setSaveSuccess(true);
+        setSaveError('');
+        // Ukryj komunikat o sukcesie po 3 sekundach
+        setTimeout(() => setSaveSuccess(false), 3000);
+      }, 1000);
+    } catch (error) {
+      console.error('Błąd podczas zapisywania konfiguracji widgetów:', error);
+      setSaveError('Nie udało się zapisać konfiguracji widgetów');
+    }
+  };
+
+  // Funkcja pomocnicza do tłumaczenia nazw widgetów
+  const widgetNameTranslation = (key) => {
+    const translations = {
+      recentAssessments: 'Ostatnie oceny RODO',
+      statistics: 'Statystyki',
+      riskOverview: 'Przegląd ryzyka',
+      subscriptionInfo: 'Informacje o subskrypcji',
+      quickActions: 'Szybkie akcje',
+      comparisonChart: 'Porównanie ocen',
+      remedialActions: 'Działania naprawcze'
+    };
+    return translations[key] || key;
+  };
+
   return (
     <Container className="main-container">
       <Row className="mb-4">
@@ -298,6 +364,15 @@ const UserSettings = () => {
                     <span>
                       <FontAwesomeIcon icon={faCreditCard} className="me-2" />
                       Subskrypcja
+                    </span>
+                  }
+                />
+                <Tab 
+                  eventKey="widgets" 
+                  title={
+                    <span>
+                      <FontAwesomeIcon icon={faCog} className="me-2" />
+                      Widgety
                     </span>
                   }
                 />
@@ -697,6 +772,90 @@ const UserSettings = () => {
                     </Col>
                   </Row>
                 </div>
+              )}
+
+              {/* Konfiguracja widgetów */}
+              {activeTab === 'widgets' && (
+                <Form onSubmit={handleSaveWidgetsConfig}>
+                  <h5 className="mb-4">Konfiguracja widgetów na dashboardzie</h5>
+                  <p className="text-muted mb-4">
+                    Wybierz, które widgety mają być widoczne na Twoim dashboardzie. Możesz włączyć lub wyłączyć poszczególne elementy, aby dostosować interfejs do swoich potrzeb.
+                  </p>
+
+                  <Row>
+                    <Col md={6}>
+                      <Card className="mb-4">
+                        <Card.Header>
+                          <h6 className="mb-0">Widgety na dashboardzie</h6>
+                        </Card.Header>
+                        <Card.Body>
+                          <div className="d-flex flex-column gap-3">
+                            {Object.entries(widgetsConfig)
+                              .filter(([key]) => ['recentAssessments', 'statistics', 'subscriptionInfo', 'quickActions'].includes(key))
+                              .map(([key, value]) => (
+                                <div key={key} className="d-flex justify-content-between align-items-center">
+                                  <div>
+                                    <FontAwesomeIcon 
+                                      icon={value ? faToggleOn : faToggleOff} 
+                                      className={value ? 'text-success me-2' : 'text-secondary me-2'} 
+                                    />
+                                    <span>{widgetNameTranslation(key)}</span>
+                                  </div>
+                                  <Form.Check
+                                    type="switch"
+                                    id={`widget-${key}`}
+                                    checked={value}
+                                    onChange={(e) => handleWidgetsConfigChange(key, e.target.checked)}
+                                  />
+                                </div>
+                              ))}
+                          </div>
+                        </Card.Body>
+                      </Card>
+                    </Col>
+                    <Col md={6}>
+                      <Card className="mb-4">
+                        <Card.Header>
+                          <h6 className="mb-0">Widgety w szczegółach oceny</h6>
+                        </Card.Header>
+                        <Card.Body>
+                          <div className="d-flex flex-column gap-3">
+                            {Object.entries(widgetsConfig)
+                              .filter(([key]) => ['comparisonChart', 'remedialActions', 'riskOverview'].includes(key))
+                              .map(([key, value]) => (
+                                <div key={key} className="d-flex justify-content-between align-items-center">
+                                  <div>
+                                    <FontAwesomeIcon 
+                                      icon={value ? faToggleOn : faToggleOff} 
+                                      className={value ? 'text-success me-2' : 'text-secondary me-2'} 
+                                    />
+                                    <span>{widgetNameTranslation(key)}</span>
+                                  </div>
+                                  <Form.Check
+                                    type="switch"
+                                    id={`widget-${key}`}
+                                    checked={value}
+                                    onChange={(e) => handleWidgetsConfigChange(key, e.target.checked)}
+                                  />
+                                </div>
+                              ))}
+                          </div>
+                        </Card.Body>
+                      </Card>
+                    </Col>
+                  </Row>
+
+                  <div className="d-flex justify-content-end">
+                    <Button variant="secondary" className="me-2" onClick={() => window.location.reload()}>
+                      <FontAwesomeIcon icon={faUndo} className="me-2" />
+                      Anuluj
+                    </Button>
+                    <Button variant="primary" type="submit">
+                      <FontAwesomeIcon icon={faSave} className="me-2" />
+                      Zapisz konfigurację
+                    </Button>
+                  </div>
+                </Form>
               )}
             </Card.Body>
           </Card>
