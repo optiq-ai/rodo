@@ -1,12 +1,18 @@
 import React from 'react';
 import { Container, Row, Col, Card, Form, Button, Alert, Tabs, Tab, Badge } from 'react-bootstrap';
 import { useAuth } from '../hooks/useAuth';
+import SubscriptionModal from '../components/subscription/SubscriptionModal';
 
 const UserSettings = () => {
   const { currentUser } = useAuth();
   const [activeTab, setActiveTab] = React.useState('profile');
   const [saveSuccess, setSaveSuccess] = React.useState(false);
   const [saveError, setSaveError] = React.useState('');
+  
+  // Modal state
+  const [showModal, setShowModal] = React.useState(false);
+  const [selectedPlan, setSelectedPlan] = React.useState('');
+  const [selectedPrice, setSelectedPrice] = React.useState('');
   
   // Dane użytkownika
   const [userData, setUserData] = React.useState({
@@ -150,9 +156,29 @@ const UserSettings = () => {
     }
   };
   
-  const handleUpgradeSubscription = () => {
-    // Tutaj byłoby przekierowanie do strony płatności/upgrade
-    alert('Przekierowanie do strony aktualizacji planu subskrypcji');
+  const handleUpgradeSubscription = (plan, price) => {
+    // Otwórz modal z wyborem planu
+    setSelectedPlan(plan);
+    setSelectedPrice(price);
+    setShowModal(true);
+  };
+  
+  const handleModalClose = (success) => {
+    setShowModal(false);
+    
+    // Jeśli operacja zakończyła się sukcesem, zaktualizuj dane subskrypcji
+    if (success) {
+      setSubscriptionData({
+        ...subscriptionData,
+        plan: selectedPlan,
+        status: 'active',
+        nextBillingDate: '2025-05-15', // Przykładowa data
+        paymentMethod: 'card'
+      });
+      
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    }
   };
   
   const renderProfileTab = () => (
@@ -457,7 +483,7 @@ const UserSettings = () => {
                 {subscriptionData.plan === 'basic' ? (
                   <Button variant="outline-primary" disabled>Aktualny plan</Button>
                 ) : (
-                  <Button variant="primary" onClick={handleUpgradeSubscription}>Wybierz plan</Button>
+                  <Button variant="primary" onClick={() => handleUpgradeSubscription('basic', '99')}>Wybierz plan</Button>
                 )}
               </Card.Body>
             </Card>
@@ -478,7 +504,7 @@ const UserSettings = () => {
                 {subscriptionData.plan === 'premium' ? (
                   <Button variant="outline-primary" disabled>Aktualny plan</Button>
                 ) : (
-                  <Button variant="primary" onClick={handleUpgradeSubscription}>Ulepsz plan</Button>
+                  <Button variant="primary" onClick={() => handleUpgradeSubscription('premium', '199')}>Ulepsz plan</Button>
                 )}
               </Card.Body>
             </Card>
@@ -574,6 +600,14 @@ const UserSettings = () => {
           </Card>
         </Col>
       </Row>
+      
+      {/* Modal do wyboru planu subskrypcji */}
+      <SubscriptionModal 
+        show={showModal}
+        onHide={handleModalClose}
+        planType={selectedPlan}
+        planPrice={selectedPrice}
+      />
     </Container>
   );
 };
