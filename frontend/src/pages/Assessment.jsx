@@ -1,13 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Form, Button, Alert, Tab, Nav } from 'react-bootstrap';
+import { Container, Row, Col, Card, Form, Button, Alert, Tab, Nav, ProgressBar } from 'react-bootstrap';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import AnimatedAssessmentForm from '../components/assessment/AnimatedAssessmentForm';
+import RadioButtonAssessmentForm from '../components/assessment/RadioButtonAssessmentForm';
 
 const Assessment = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { currentUser } = useAuth();
+  const [currentChapterIndex, setCurrentChapterIndex] = useState(0);
+  const [currentAreaIndex, setCurrentAreaIndex] = useState(0);
+  const [overallProgress, setOverallProgress] = useState(0);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [assessment, setAssessment] = useState({
@@ -255,6 +260,72 @@ const Assessment = () => {
     }));
   };
 
+  // Funkcje nawigacji między obszarami
+  const handleNextArea = () => {
+    const currentChapter = assessment.chapters[currentChapterIndex];
+    if (currentAreaIndex < currentChapter.areas.length - 1) {
+      // Przejście do następnego obszaru w tym samym rozdziale
+      setCurrentAreaIndex(currentAreaIndex + 1);
+    } else if (currentChapterIndex < assessment.chapters.length - 1) {
+      // Przejście do pierwszego obszaru w następnym rozdziale
+      setCurrentChapterIndex(currentChapterIndex + 1);
+      setCurrentAreaIndex(0);
+    }
+    updateProgress();
+  };
+
+  const handlePrevArea = () => {
+    if (currentAreaIndex > 0) {
+      // Przejście do poprzedniego obszaru w tym samym rozdziale
+      setCurrentAreaIndex(currentAreaIndex - 1);
+    } else if (currentChapterIndex > 0) {
+      // Przejście do ostatniego obszaru w poprzednim rozdziale
+      setCurrentChapterIndex(currentChapterIndex - 1);
+      const prevChapter = assessment.chapters[currentChapterIndex - 1];
+      setCurrentAreaIndex(prevChapter.areas.length - 1);
+    }
+    updateProgress();
+  };
+
+  // Funkcja do obliczania ogólnego postępu
+  const updateProgress = () => {
+    let totalRequirements = 0;
+    let answeredRequirements = 0;
+
+    assessment.chapters.forEach(chapter => {
+      chapter.areas.forEach(area => {
+        area.requirements.forEach(req => {
+          totalRequirements++;
+          if (req.value) {
+            answeredRequirements++;
+          }
+        });
+      });
+    });
+
+    const progress = totalRequirements > 0 ? Math.round((answeredRequirements / totalRequirements) * 100) : 0;
+    setOverallProgress(progress);
+  };
+
+  // Funkcja eksportu oceny
+  const handleExport = () => {
+    // W rzeczywistości będzie to wywołanie do backendu
+    // const response = await assessmentService.exportAssessment(assessment.id);
+    
+    // Symulacja eksportu
+    const exportData = JSON.stringify(assessment, null, 2);
+    const blob = new Blob([exportData], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ocena-rodo-${assessment.id}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const handleSave = async () => {
     try {
       setLoading(true);
@@ -265,7 +336,9 @@ const Assessment = () => {
       // Symulacja zapisywania
       setTimeout(() => {
         setLoading(false);
-        navigate('/dashboard');
+        setSaveSuccess(true);
+        // Ukryj komunikat o sukcesie po 3 sekundach
+        setTimeout(() => setSaveSuccess(false), 3000);
       }, 1000);
     } catch (err) {
       setError('Nie udało się zapisać oceny');
@@ -287,14 +360,15 @@ const Assessment = () => {
     <Container className="my-4">
       <Row className="mb-4">
         <Col>
-          <h1>{id === 'new' ? 'Nowa ocena RODO' : 'Edycja oceny RODO'}</h1>
-          {error && <Alert variant="danger">{error}</Alert>}
+          <h1 className="fade-in">{id === 'new' ? 'Nowa ocena RODO' : 'Edycja oceny RODO'}</h1>
+          {error && <Alert variant="danger" className="fade-in">{error}</Alert>}
+          {saveSuccess && <Alert variant="success" className="fade-in">Zmiany zostały pomyślnie zapisane!</Alert>}
         </Col>
       </Row>
 
       <Row className="mb-4">
         <Col>
-          <Card>
+          <Card className="fade-in">
             <Card.Body>
               <Form>
                 <Form.Group className="mb-3">
@@ -306,6 +380,7 @@ const Assessment = () => {
                     onChange={handleInputChange}
                     placeholder="Wprowadź nazwę oceny"
                     required
+                    className="comment-animated"
                   />
                 </Form.Group>
                 <Form.Group className="mb-3">
@@ -317,6 +392,7 @@ const Assessment = () => {
                     value={assessment.description}
                     onChange={handleInputChange}
                     placeholder="Wprowadź opis oceny"
+                    className="comment-animated"
                   />
                 </Form.Group>
               </Form>
@@ -325,63 +401,45 @@ const Assessment = () => {
         </Col>
       </Row>
 
-      <Row>
-        <Col>
-          <Card className="assessment-form">
-            <Card.Body>
-              <Tab.Container id="assessment-tabs" defaultActiveKey="chapter-0">
-                <Row>
-                  <Col md={3}>
-                    <Nav variant="pills" className="flex-column">
-                      {assessment.chapters.map((chapter, chapterIndex) => (
-                        <Nav.Item key={chapter.id}>
-                          <Nav.Link eventKey={`chapter-${chapterIndex}`}>
-                            {chapter.name}
-                          </Nav.Link>
-                        </Nav.Item>
-                      ))}
-                    </Nav>
-                  </Col>
-                  <Col md={9}>
-                    <Tab.Content>
-                      {assessment.chapters.map((chapter, chapterIndex) => (
-                        <Tab.Pane key={chapter.id} eventKey={`chapter-${chapterIndex}`}>
-                          <div className="chapter-section">
-                            <h3 className="chapter-title">{chapter.name}</h3>
-                            <p>{chapter.description}</p>
-                            
-                            {chapter.areas.map((area, areaIndex) => (
-                              <AnimatedAssessmentForm
-                                key={area.id}
-                                area={area}
-                                chapterIndex={chapterIndex}
-                                areaIndex={areaIndex}
-                                handleRequirementChange={handleRequirementChange}
-                                handleAreaScoreChange={handleAreaScoreChange}
-                                handleAreaCommentChange={handleAreaCommentChange}
-                              />
-                            ))}
-                          </div>
-                        </Tab.Pane>
-                      ))}
-                    </Tab.Content>
-                  </Col>
-                </Row>
-              </Tab.Container>
-            </Card.Body>
-            <Card.Footer className="d-flex justify-content-between">
-              <Button variant="secondary" onClick={() => navigate('/dashboard')}>
-                Anuluj
-              </Button>
-              <div>
-                <Button variant="primary" onClick={handleSave} disabled={loading}>
-                  {loading ? 'Zapisywanie...' : 'Zapisz'}
-                </Button>
+      {assessment.chapters.length > 0 && (
+        <>
+          <Row className="mb-4">
+            <Col>
+              <div className="d-flex justify-content-between align-items-center mb-2">
+                <h5>Ogólny postęp oceny:</h5>
+                <span className="badge bg-primary">{overallProgress}%</span>
               </div>
-            </Card.Footer>
-          </Card>
-        </Col>
-      </Row>
+              <ProgressBar 
+                now={overallProgress} 
+                variant={overallProgress < 30 ? "danger" : overallProgress < 70 ? "warning" : "success"} 
+                animated 
+                style={{height: '15px'}}
+              />
+            </Col>
+          </Row>
+
+          <Row>
+            <Col>
+              {assessment.chapters[currentChapterIndex] && assessment.chapters[currentChapterIndex].areas[currentAreaIndex] && (
+                <RadioButtonAssessmentForm
+                  area={assessment.chapters[currentChapterIndex].areas[currentAreaIndex]}
+                  chapterIndex={currentChapterIndex}
+                  areaIndex={currentAreaIndex}
+                  handleRequirementChange={handleRequirementChange}
+                  handleAreaScoreChange={handleAreaScoreChange}
+                  handleAreaCommentChange={handleAreaCommentChange}
+                  totalAreas={assessment.chapters.reduce((total, chapter) => total + chapter.areas.length, 0)}
+                  currentAreaIndex={assessment.chapters.slice(0, currentChapterIndex).reduce((total, chapter) => total + chapter.areas.length, 0) + currentAreaIndex}
+                  onNextArea={handleNextArea}
+                  onPrevArea={handlePrevArea}
+                  onSave={handleSave}
+                  onExport={handleExport}
+                />
+              )}
+            </Col>
+          </Row>
+        </>
+      )}
     </Container>
   );
 };
