@@ -1,15 +1,8 @@
 import React from 'react';
-import { Row, Col, Card, Button, Table, Modal } from 'react-bootstrap';
+import { Row, Col, Card, Button, Table, Badge } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTrash, faEdit, faChartBar } from '@fortawesome/free-solid-svg-icons';
-import { AnimatedProgressBar, AnimatedPercentageIndicator } from '../common/AnimatedElements';
-import { useState } from 'react';
 
-const CompactDashboard = ({ assessments, loading, onDeleteAssessment }) => {
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [assessmentToDelete, setAssessmentToDelete] = useState(null);
-
+const CompactDashboard = ({ assessments, loading }) => {
   const getStatusBadgeClass = (status) => {
     switch (status) {
       case 'ZAKOŃCZONA':
@@ -19,24 +12,6 @@ const CompactDashboard = ({ assessments, loading, onDeleteAssessment }) => {
       default:
         return 'status-badge status-not-applicable';
     }
-  };
-
-  const handleDeleteClick = (assessment) => {
-    setAssessmentToDelete(assessment);
-    setShowDeleteModal(true);
-  };
-
-  const confirmDelete = () => {
-    if (assessmentToDelete && onDeleteAssessment) {
-      onDeleteAssessment(assessmentToDelete.id);
-    }
-    setShowDeleteModal(false);
-    setAssessmentToDelete(null);
-  };
-
-  const cancelDelete = () => {
-    setShowDeleteModal(false);
-    setAssessmentToDelete(null);
   };
 
   const totalAreas = assessments.reduce((sum, a) => sum + a.positiveAreas + a.warningAreas + a.negativeAreas, 0);
@@ -120,28 +95,17 @@ const CompactDashboard = ({ assessments, loading, onDeleteAssessment }) => {
                             variant="outline-primary" 
                             size="sm" 
                             className="me-1 btn-sm"
-                            title="Edytuj ocenę"
                           >
-                            <FontAwesomeIcon icon={faEdit} />
+                            Edytuj
                           </Button>
                           <Button 
                             as={Link} 
                             to={`/results/${assessment.id}`} 
                             variant="outline-info" 
                             size="sm"
-                            className="me-1 btn-sm"
-                            title="Zobacz wyniki"
-                          >
-                            <FontAwesomeIcon icon={faChartBar} />
-                          </Button>
-                          <Button 
-                            variant="outline-danger" 
-                            size="sm"
                             className="btn-sm"
-                            onClick={() => handleDeleteClick(assessment)}
-                            title="Usuń ocenę"
                           >
-                            <FontAwesomeIcon icon={faTrash} />
+                            Wyniki
                           </Button>
                         </td>
                       </tr>
@@ -166,35 +130,49 @@ const CompactDashboard = ({ assessments, loading, onDeleteAssessment }) => {
               <Card.Body>
                 <Row>
                   <Col md={8}>
-                    <AnimatedProgressBar 
-                      value={positivePercentage} 
-                      label="Obszary z oceną pozytywną" 
-                      color="positive" 
-                      animated={true}
-                    />
+                    <div className="mb-3 fade-in" style={{animationDelay: '0.9s'}}>
+                      <div className="d-flex justify-content-between align-items-center mb-1">
+                        <span>Obszary z oceną pozytywną</span>
+                        <span className="status-badge status-positive">{positivePercentage}%</span>
+                      </div>
+                      <div className="progress" style={{height: '10px'}}>
+                        <div 
+                          className="progress-bar progress-bar-success" 
+                          role="progressbar" 
+                          style={{ width: `${positivePercentage}%` }}
+                        />
+                      </div>
+                    </div>
                     
-                    <AnimatedProgressBar 
-                      value={warningPercentage} 
-                      label="Obszary z zastrzeżeniami" 
-                      color="warning" 
-                      animated={true}
-                    />
+                    <div className="mb-3 fade-in" style={{animationDelay: '1s'}}>
+                      <div className="d-flex justify-content-between align-items-center mb-1">
+                        <span>Obszary z zastrzeżeniami</span>
+                        <span className="status-badge status-warning">{warningPercentage}%</span>
+                      </div>
+                      <div className="progress" style={{height: '10px'}}>
+                        <div 
+                          className="progress-bar progress-bar-warning" 
+                          role="progressbar" 
+                          style={{ width: `${warningPercentage}%` }}
+                        />
+                      </div>
+                    </div>
                     
-                    <AnimatedProgressBar 
-                      value={negativePercentage} 
-                      label="Obszary z oceną negatywną" 
-                      color="negative" 
-                      animated={true}
-                    />
+                    <div className="mb-3 fade-in" style={{animationDelay: '1.1s'}}>
+                      <div className="d-flex justify-content-between align-items-center mb-1">
+                        <span>Obszary z oceną negatywną</span>
+                        <span className="status-badge status-negative">{negativePercentage}%</span>
+                      </div>
+                      <div className="progress" style={{height: '10px'}}>
+                        <div 
+                          className="progress-bar progress-bar-danger" 
+                          role="progressbar" 
+                          style={{ width: `${negativePercentage}%` }}
+                        />
+                      </div>
+                    </div>
                   </Col>
-                  <Col md={4} className="d-flex align-items-center justify-content-center">
-                    <AnimatedPercentageIndicator
-                      value={positivePercentage}
-                      label="Zgodność z RODO"
-                      color="#28a745"
-                      size="large"
-                      animated={true}
-                    />
+                  <Col md={4} className="d-flex align-items-center justify-content-center fade-in" style={{animationDelay: '1.2s'}}>
                     <div className="text-center">
                       <div className="mb-2">
                         <span className="h4">{totalAreas}</span>
@@ -211,27 +189,6 @@ const CompactDashboard = ({ assessments, loading, onDeleteAssessment }) => {
           </Col>
         </Row>
       )}
-
-      {/* Modal potwierdzenia usunięcia */}
-      <Modal show={showDeleteModal} onHide={cancelDelete} centered animation className="fade-in">
-        <Modal.Header closeButton>
-          <Modal.Title>Potwierdź usunięcie</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          Czy na pewno chcesz usunąć ocenę <strong>{assessmentToDelete?.name}</strong>?
-          <div className="alert alert-warning mt-2">
-            <small>Ta operacja jest nieodwracalna. Wszystkie dane związane z tą oceną zostaną trwale usunięte.</small>
-          </div>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={cancelDelete}>
-            Anuluj
-          </Button>
-          <Button variant="danger" onClick={confirmDelete}>
-            Usuń
-          </Button>
-        </Modal.Footer>
-      </Modal>
     </>
   );
 };
