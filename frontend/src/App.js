@@ -8,12 +8,14 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Assessment from './pages/Assessment';
 import Results from './pages/Results';
+import DetailedReports from './pages/DetailedReports';
 import NotFound from './pages/NotFound';
 import UserSettings from './pages/UserSettings';
 import PrivateRoute from './components/common/PrivateRoute';
 import './App.css';
 import './animations.css';
 import './assessment-animations.css';
+import './detailed-reports.css';
 
 function App() {
   return (
@@ -37,6 +39,11 @@ function App() {
           <Route path="/results/:id" element={
             <PrivateRoute>
               <Results />
+            </PrivateRoute>
+          } />
+          <Route path="/results" element={
+            <PrivateRoute>
+              <DetailedReports />
             </PrivateRoute>
           } />
           <Route path="/settings" element={

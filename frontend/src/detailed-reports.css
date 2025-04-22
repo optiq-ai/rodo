@@ -1,0 +1,119 @@
+.detailed-reports-container .card {
+  transition: all 0.3s ease;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.detailed-reports-container .card:hover {
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.detailed-reports-container .card-header {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+  padding: 0.75rem 1.25rem;
+}
+
+.detailed-reports-container .card-header h5 {
+  margin-bottom: 0;
+  font-weight: 600;
+  color: #3f51b5;
+}
+
+.detailed-reports-container .progress {
+  height: 10px;
+  border-radius: 5px;
+}
+
+.detailed-reports-container .table th {
+  font-weight: 600;
+  color: #495057;
+}
+
+.detailed-reports-container .badge {
+  font-weight: 500;
+  padding: 0.4em 0.6em;
+}
+
+.detailed-reports-container .nav-tabs .nav-link {
+  color: #6c757d;
+  font-weight: 500;
+  padding: 0.75rem 1.25rem;
+  border: 1px solid transparent;
+}
+
+.detailed-reports-container .nav-tabs .nav-link.active {
+  color: #3f51b5;
+  background-color: #fff;
+  border-color: #dee2e6 #dee2e6 #fff;
+  font-weight: 600;
+}
+
+.detailed-reports-container .nav-tabs .nav-link:hover:not(.active) {
+  border-color: #e9ecef #e9ecef #dee2e6;
+  background-color: #f8f9fa;
+}
+
+.detailed-reports-container .btn-outline-primary {
+  color: #3f51b5;
+  border-color: #3f51b5;
+}
+
+.detailed-reports-container .btn-outline-primary:hover {
+  background-color: #3f51b5;
+  color: white;
+}
+
+.detailed-reports-container .btn-primary {
+  background-color: #3f51b5;
+  border-color: #3f51b5;
+}
+
+.detailed-reports-container .btn-primary:hover {
+  background-color: #303f9f;
+  border-color: #303f9f;
+}
+
+/* Animacje */
+.fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Style dla wykresów */
+.chart-container {
+  position: relative;
+  margin: auto;
+  height: 100%;
+  width: 100%;
+}
+
+/* Responsywność */
+@media (max-width: 768px) {
+  .detailed-reports-container .card-body {
+    padding: 1rem;
+  }
+  
+  .detailed-reports-container .nav-tabs .nav-link {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.9rem;
+  }
+  
+  .detailed-reports-container h2 {
+    font-size: 1.75rem;
+  }
+  
+  .detailed-reports-container .table {
+    font-size: 0.9rem;
+  }
+}
