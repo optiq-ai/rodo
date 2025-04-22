@@ -9,6 +9,7 @@ import Dashboard from './pages/Dashboard';
 import Assessment from './pages/Assessment';
 import Results from './pages/Results';
 import NotFound from './pages/NotFound';
+import UserSettings from './pages/UserSettings';
 import PrivateRoute from './components/common/PrivateRoute';
 import './App.css';
 import './animations.css';
@@ -36,6 +37,16 @@ function App() {
           <Route path="/results/:id" element={
             <PrivateRoute>
               <Results />
+            </PrivateRoute>
+          } />
+          <Route path="/settings" element={
+            <PrivateRoute>
+              <UserSettings />
+            </PrivateRoute>
+          } />
+          <Route path="/settings/subscription" element={
+            <PrivateRoute>
+              <UserSettings />
             </PrivateRoute>
           } />
           <Route path="*" element={<NotFound />} />
