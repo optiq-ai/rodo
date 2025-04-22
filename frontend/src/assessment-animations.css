@@ -1,0 +1,183 @@
+/* Animacje dla formularza oceny RODO */
+
+/* Efekty wejścia elementów */
+.fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Animacja dla radio buttonów */
+.radio-animated {
+  transition: all 0.3s ease;
+}
+
+.radio-animated:hover {
+  transform: scale(1.05);
+}
+
+.radio-animated input:checked + label {
+  font-weight: bold;
+}
+
+/* Animacja dla pól komentarzy */
+.comment-animated {
+  transition: all 0.3s ease;
+  border-left: 3px solid transparent;
+}
+
+.comment-animated:focus {
+  border-left: 3px solid #4a8eff;
+  box-shadow: 0 0 0 0.25rem rgba(74, 142, 255, 0.25);
+}
+
+/* Kolorowe statusy */
+.status-badge {
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-weight: bold;
+  display: inline-block;
+  transition: all 0.3s ease;
+}
+
+.status-positive {
+  background-color: #28a745;
+  color: white;
+}
+
+.status-warning {
+  background-color: #ffc107;
+  color: #212529;
+}
+
+.status-negative {
+  background-color: #dc3545;
+  color: white;
+}
+
+.status-in-progress {
+  background-color: #17a2b8;
+  color: white;
+}
+
+.status-not-applicable {
+  background-color: #6c757d;
+  color: white;
+}
+
+/* Animowane paski postępu */
+.progress {
+  height: 10px;
+  border-radius: 5px;
+  overflow: hidden;
+  background-color: #e9ecef;
+  margin: 10px 0;
+}
+
+.progress-bar {
+  transition: width 0.6s ease;
+}
+
+.progress-bar-success {
+  background-color: #28a745;
+  background-image: linear-gradient(45deg, rgba(255,255,255,.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,.15) 50%, rgba(255,255,255,.15) 75%, transparent 75%, transparent);
+  background-size: 1rem 1rem;
+  animation: progress-bar-stripes 1s linear infinite;
+}
+
+.progress-bar-warning {
+  background-color: #ffc107;
+  background-image: linear-gradient(45deg, rgba(255,255,255,.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,.15) 50%, rgba(255,255,255,.15) 75%, transparent 75%, transparent);
+  background-size: 1rem 1rem;
+  animation: progress-bar-stripes 1s linear infinite;
+}
+
+.progress-bar-danger {
+  background-color: #dc3545;
+  background-image: linear-gradient(45deg, rgba(255,255,255,.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,.15) 50%, rgba(255,255,255,.15) 75%, transparent 75%, transparent);
+  background-size: 1rem 1rem;
+  animation: progress-bar-stripes 1s linear infinite;
+}
+
+@keyframes progress-bar-stripes {
+  from { background-position: 1rem 0; }
+  to { background-position: 0 0; }
+}
+
+/* Efekty dla przycisków */
+.btn {
+  transition: all 0.3s ease;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Animacja dla kart */
+.card {
+  transition: all 0.3s ease;
+  border: none;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.card:hover {
+  box-shadow: 0 10px 15px rgba(0,0,0,0.1);
+}
+
+.card-header {
+  border-bottom: none;
+  background-image: linear-gradient(to right, #4a8eff, #1e54d5);
+  padding: 15px 20px;
+  border-radius: 10px 10px 0 0 !important;
+}
+
+.card-body {
+  padding: 25px;
+}
+
+.card-footer {
+  background-color: #f8f9fa;
+  border-top: none;
+  padding: 15px 25px;
+  border-radius: 0 0 10px 10px !important;
+}
+
+/* Efekty dla pytań */
+.requirement-item {
+  transition: all 0.3s ease;
+}
+
+.requirement-item:hover {
+  transform: translateX(5px);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+/* Animacja dla alertów */
+.alert {
+  animation: slideDown 0.5s ease-in-out;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Efekt pulsowania dla przycisków akcji */
+.btn-primary {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(74, 142, 255, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(74, 142, 255, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(74, 142, 255, 0); }
+}
