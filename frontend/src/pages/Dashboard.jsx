@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Container } from 'react-bootstrap';
+import { Container, Toast, ToastContainer } from 'react-bootstrap';
 import { useAuth } from '../hooks/useAuth';
 import CompactDashboard from '../components/dashboard/CompactDashboard';
 
@@ -7,6 +7,9 @@ const Dashboard = () => {
   const { currentUser } = useAuth();
   const [assessments, setAssessments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastVariant, setToastVariant] = useState('success');
 
   useEffect(() => {
     // Symulacja pobierania danych z API
@@ -52,6 +55,7 @@ const Dashboard = () => {
         setAssessments(mockAssessments);
       } catch (error) {
         console.error('Błąd podczas pobierania ocen:', error);
+        showToastMessage('Błąd podczas pobierania ocen', 'danger');
       } finally {
         setLoading(false);
       }
@@ -59,6 +63,28 @@ const Dashboard = () => {
 
     fetchAssessments();
   }, []);
+
+  const handleDeleteAssessment = (assessmentId) => {
+    try {
+      // W rzeczywistości będzie to wywołanie do backendu
+      // await assessmentService.deleteAssessment(assessmentId);
+      
+      // Tymczasowa implementacja - usunięcie z lokalnego stanu
+      const updatedAssessments = assessments.filter(assessment => assessment.id !== assessmentId);
+      setAssessments(updatedAssessments);
+      
+      showToastMessage('Ocena została pomyślnie usunięta', 'success');
+    } catch (error) {
+      console.error('Błąd podczas usuwania oceny:', error);
+      showToastMessage('Błąd podczas usuwania oceny', 'danger');
+    }
+  };
+
+  const showToastMessage = (message, variant = 'success') => {
+    setToastMessage(message);
+    setToastVariant(variant);
+    setShowToast(true);
+  };
 
   return (
     <Container className="my-3 fade-in">
@@ -68,7 +94,26 @@ const Dashboard = () => {
       <CompactDashboard 
         assessments={assessments}
         loading={loading}
+        onDeleteAssessment={handleDeleteAssessment}
       />
+
+      <ToastContainer position="bottom-end" className="p-3">
+        <Toast 
+          onClose={() => setShowToast(false)} 
+          show={showToast} 
+          delay={3000} 
+          autohide
+          bg={toastVariant}
+          className="fade-in"
+        >
+          <Toast.Header>
+            <strong className="me-auto">Powiadomienie</strong>
+          </Toast.Header>
+          <Toast.Body className={toastVariant === 'danger' ? 'text-white' : ''}>
+            {toastMessage}
+          </Toast.Body>
+        </Toast>
+      </ToastContainer>
     </Container>
   );
 };
