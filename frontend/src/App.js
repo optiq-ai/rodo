@@ -16,6 +16,8 @@ import UserSettings from './pages/UserSettings';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import { Container } from 'react-bootstrap';
+import HomeRedirect from './components/common/HomeRedirect';
+
 function App() {
   return (
     <div className="app-container d-flex flex-column min-vh-100">
@@ -42,7 +44,7 @@ function App() {
           <Route path="/settings/subscription" element={
             <ProtectedRoute element={<UserSettings />} />
           } />
-          <Route path="/" element={<LoginPage />} />
+          <Route path="/" element={<HomeRedirect />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Container>
