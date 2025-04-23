@@ -25,11 +25,14 @@ const LoginForm = () => {
       const { token } = response.data;
       localStorage.setItem("token", token);
       
-      // Update the auth context directly after successful login
+      // Update the auth context directly after successful login with actual username
       setCurrentUser({ 
         token,
-        username: 'User'
+        username: login
       });
+      
+      // Store username in localStorage for persistence
+      localStorage.setItem("username", login);
       
       // Navigate to dashboard after updating auth state
       navigate("/dashboard");

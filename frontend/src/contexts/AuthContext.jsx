@@ -10,10 +10,12 @@ export const AuthProvider = ({ children }) => {
     // Check if user is logged in based on token
     const token = localStorage.getItem('token');
     if (token) {
+      // Get username from localStorage or use fallback
+      const username = localStorage.getItem('username') || 'Użytkownik';
       // Create a more complete user object with username
       setCurrentUser({ 
         token,
-        username: 'User' // Default username or extract from token if possible
+        username
       });
     }
     setLoading(false);
