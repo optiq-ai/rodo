@@ -11,6 +11,8 @@ DROP TABLE IF EXISTS assessment;
 DROP TABLE IF EXISTS subscription;
 DROP TABLE IF EXISTS user_profile;
 DROP TABLE IF EXISTS company;
+DROP TABLE IF EXISTS employee_roles;
+DROP TABLE IF EXISTS role;
 DROP TABLE IF EXISTS employee;
 
 -- Tworzenie tabeli employee (użytkownicy)
@@ -21,9 +23,23 @@ CREATE TABLE employee (
     email VARCHAR(100) NOT NULL UNIQUE,
     first_name VARCHAR(50),
     last_name VARCHAR(50),
-    role VARCHAR(20) NOT NULL DEFAULT 'USER',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     active BOOLEAN NOT NULL DEFAULT TRUE
+);
+
+-- Tworzenie tabeli role (role użytkowników)
+CREATE TABLE role (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE
+);
+
+-- Tworzenie tabeli employee_roles (relacja wiele-do-wielu między użytkownikami a rolami)
+CREATE TABLE employee_roles (
+    user_id INT NOT NULL,
+    role_id INT NOT NULL,
+    PRIMARY KEY (user_id, role_id),
+    FOREIGN KEY (user_id) REFERENCES employee(id) ON DELETE CASCADE,
+    FOREIGN KEY (role_id) REFERENCES role(id) ON DELETE CASCADE
 );
 
 -- Tworzenie tabeli company (firmy)
@@ -148,15 +164,25 @@ CREATE INDEX idx_report_employee ON report(employee_id);
 CREATE INDEX idx_compliance_area_report ON compliance_area(report_id);
 CREATE INDEX idx_recommendation_report ON recommendation(report_id);
 
+-- Dodanie domyślnych ról
+INSERT INTO role (name) VALUES ('ROLE_ADMIN');
+INSERT INTO role (name) VALUES ('ROLE_USER');
+
 -- Dodanie domyślnego użytkownika administratora
-INSERT INTO employee (user_name, password, email, first_name, last_name, role)
-VALUES ('admin', '$2a$10$xn3LI/AjqicFYZFruSwve.681477XaVNaUQbr1gioaWPn4t1KsnmG', 'admin@example.com', 'Admin', 'RODO', 'ADMIN');
+INSERT INTO employee (user_name, password, email, first_name, last_name)
+VALUES ('admin', '$2a$10$xn3LI/AjqicFYZFruSwve.681477XaVNaUQbr1gioaWPn4t1KsnmG', 'admin@example.com', 'Admin', 'RODO');
 -- Hasło: Admin123!
 
+-- Przypisanie roli administratora
+INSERT INTO employee_roles (user_id, role_id) VALUES (1, 1);
+
 -- Dodanie domyślnego użytkownika testowego
-INSERT INTO employee (user_name, password, email, first_name, last_name, role)
-VALUES ('user', '$2a$10$xn3LI/AjqicFYZFruSwve.681477XaVNaUQbr1gioaWPn4t1KsnmG', 'user@example.com', 'Test', 'User', 'USER');
+INSERT INTO employee (user_name, password, email, first_name, last_name)
+VALUES ('user', '$2a$10$xn3LI/AjqicFYZFruSwve.681477XaVNaUQbr1gioaWPn4t1KsnmG', 'user@example.com', 'Test', 'User');
 -- Hasło: Admin123!
+
+-- Przypisanie roli użytkownika
+INSERT INTO employee_roles (user_id, role_id) VALUES (2, 2);
 
 -- Dodanie profilu dla użytkownika testowego
 INSERT INTO user_profile (phone, position, notification_email, notification_app, employee_id)
