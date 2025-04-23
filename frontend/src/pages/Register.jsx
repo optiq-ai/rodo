@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import { useAuth } from '../hooks/useAuth';
 import './Register.css';
 
@@ -19,7 +18,7 @@ const Register = () => {
   const [errorMessage, setErrorMessage] = useState('');
   
   const navigate = useNavigate();
-  const { setCurrentUser } = useAuth();
+  const { register: authRegister } = useAuth();
 
   const validateEmail = (email) => {
     const re = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -80,7 +79,8 @@ const Register = () => {
     
     if (validateForm()) {
       try {
-        const response = await axios.post('http://localhost:8080/register', {
+        // Używamy funkcji register z kontekstu autentykacji
+        const result = await authRegister({
           userName: formData.userName,
           password: formData.password, // Wysyłamy hasło jako string, zgodnie z oczekiwaniami backendu
           firstName: formData.firstName,
@@ -88,36 +88,25 @@ const Register = () => {
           email: formData.email
         });
         
-        // Store token in localStorage
-        localStorage.setItem('token', response.data.token);
-        
-        // Update auth context
-        setCurrentUser({
-          token: response.data.token,
-          username: formData.userName
-        });
-        
-        // Redirect to dashboard
-        navigate('/dashboard');
+        if (result.success) {
+          // Jeśli rejestracja się powiodła, przekieruj do dashboardu
+          navigate('/dashboard');
+        } else {
+          // Jeśli rejestracja się nie powiodła, wyświetl błąd
+          setErrorMessage(result.error || 'Rejestracja nie powiodła się. Spróbuj ponownie.');
+          setShowError(true);
+          
+          // Hide error after 8 seconds
+          setTimeout(() => {
+            setShowError(false);
+          }, 8000);
+        }
       } catch (error) {
         console.error('Registration error:', error);
-        
-        // Lepsza obsługa błędów
-        if (error.response) {
-          // Serwer zwrócił odpowiedź z kodem błędu
-          const errorMsg = error.response.data.error || error.response.data.message || 'Rejestracja nie powiodła się. Spróbuj ponownie.';
-          setErrorMessage(errorMsg);
-        } else if (error.request) {
-          // Żądanie zostało wysłane, ale nie otrzymano odpowiedzi
-          setErrorMessage('Brak odpowiedzi z serwera. Sprawdź połączenie internetowe.');
-        } else {
-          // Wystąpił błąd podczas konfigurowania żądania
-          setErrorMessage('Wystąpił błąd podczas rejestracji. Spróbuj ponownie później.');
-        }
-        
+        setErrorMessage('Wystąpił nieoczekiwany błąd podczas rejestracji. Spróbuj ponownie później.');
         setShowError(true);
         
-        // Hide error after 8 seconds (zwiększono z 5 do 8 sekund, aby użytkownik miał więcej czasu na przeczytanie)
+        // Hide error after 8 seconds
         setTimeout(() => {
           setShowError(false);
         }, 8000);

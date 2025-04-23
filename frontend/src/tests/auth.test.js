@@ -1,235 +1,183 @@
-/**
- * Testy dla komponentów autentykacji
- * 
- * Ten plik zawiera testy dla zmodyfikowanych komponentów logowania i rejestracji,
- * które sprawdzają poprawność obsługi błędów i formatowania danych.
- */
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { BrowserRouter } from 'react-router-dom';
+import { AuthProvider } from '../contexts/AuthContext';
+import LoginForm from '../components/LoginPageComponents/LoginPage/LoginCard/LoginForm/LoginForm';
+import Register from '../pages/Register';
 
-import axios from 'axios';
-import MockAdapter from 'axios-mock-adapter';
+// Mock useNavigate
+jest.mock('react-router-dom', () => ({
+  ...jest.requireActual('react-router-dom'),
+  useNavigate: () => jest.fn()
+}));
 
-// Utworzenie mocka dla axios
-const mock = new MockAdapter(axios);
+// Wrapper component for testing
+const TestWrapper = ({ children }) => (
+  <BrowserRouter>
+    <AuthProvider>
+      {children}
+    </AuthProvider>
+  </BrowserRouter>
+);
 
-// Funkcje pomocnicze do testowania
-const simulateLoginSubmit = async (login, password) => {
-  try {
-    const response = await axios.post('http://localhost:8080/login', {
-      userName: login,
-      password: password
-    });
-    return {
-      success: true,
-      data: response.data
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error
-    };
-  }
-};
-
-const simulateRegisterSubmit = async (userData) => {
-  try {
-    const response = await axios.post('http://localhost:8080/register', userData);
-    return {
-      success: true,
-      data: response.data
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error
-    };
-  }
-};
-
-// Testy dla logowania
-describe('Login functionality', () => {
+describe('Authentication Components', () => {
   beforeEach(() => {
-    mock.reset();
+    // Clear localStorage before each test
+    localStorage.clear();
+    
+    // Clear all mocks
+    jest.clearAllMocks();
   });
   
-  test('Successful login sends correct data format', async () => {
-    // Konfiguracja mocka dla udanego logowania
-    mock.onPost('http://localhost:8080/login').reply(200, {
-      token: 'test-token'
+  describe('LoginForm Component', () => {
+    test('renders login form correctly', () => {
+      render(
+        <TestWrapper>
+          <LoginForm />
+        </TestWrapper>
+      );
+      
+      expect(screen.getByLabelText(/login/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/hasło/i)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /zaloguj/i })).toBeInTheDocument();
     });
     
-    // Symulacja logowania
-    const result = await simulateLoginSubmit('testuser', 'password123');
-    
-    // Sprawdzenie, czy żądanie zostało wykonane
-    expect(mock.history.post.length).toBe(1);
-    
-    // Sprawdzenie, czy dane zostały wysłane w poprawnym formacie
-    const requestData = JSON.parse(mock.history.post[0].data);
-    expect(requestData.userName).toBe('testuser');
-    expect(requestData.password).toBe('password123');
-    expect(Array.isArray(requestData.password)).toBe(false); // Hasło NIE jest tablicą
-    
-    // Sprawdzenie, czy odpowiedź została poprawnie przetworzona
-    expect(result.success).toBe(true);
-    expect(result.data.token).toBe('test-token');
-  });
-  
-  test('Login handles 401 error correctly', async () => {
-    // Konfiguracja mocka dla błędu 401
-    mock.onPost('http://localhost:8080/login').reply(401, {
-      message: 'Invalid username or password'
+    test('handles login submission correctly', async () => {
+      // Mock the login function in AuthContext
+      const mockLogin = jest.fn().mockResolvedValue({ success: true });
+      jest.mock('../hooks/useAuth', () => ({
+        useAuth: () => ({
+          login: mockLogin
+        })
+      }));
+      
+      render(
+        <TestWrapper>
+          <LoginForm />
+        </TestWrapper>
+      );
+      
+      // Fill in the form
+      fireEvent.change(screen.getByLabelText(/login/i), { target: { value: 'testuser' } });
+      fireEvent.change(screen.getByLabelText(/hasło/i), { target: { value: 'password123' } });
+      
+      // Submit the form
+      fireEvent.click(screen.getByRole('button', { name: /zaloguj/i }));
+      
+      // Verify that login was called with correct parameters
+      await waitFor(() => {
+        expect(mockLogin).toHaveBeenCalledWith({
+          userName: 'testuser',
+          password: 'password123'
+        });
+      });
     });
     
-    // Symulacja logowania
-    const result = await simulateLoginSubmit('testuser', 'wrongpassword');
-    
-    // Sprawdzenie, czy żądanie zostało wykonane
-    expect(mock.history.post.length).toBe(1);
-    
-    // Sprawdzenie, czy błąd został poprawnie przetworzony
-    expect(result.success).toBe(false);
-    expect(result.error.response.status).toBe(401);
-    expect(result.error.response.data.message).toBe('Invalid username or password');
+    test('displays error message on login failure', async () => {
+      // Mock the login function in AuthContext to return an error
+      const mockLogin = jest.fn().mockResolvedValue({ 
+        success: false, 
+        error: 'Nieprawidłowa nazwa użytkownika lub hasło' 
+      });
+      jest.mock('../hooks/useAuth', () => ({
+        useAuth: () => ({
+          login: mockLogin
+        })
+      }));
+      
+      render(
+        <TestWrapper>
+          <LoginForm />
+        </TestWrapper>
+      );
+      
+      // Fill in the form
+      fireEvent.change(screen.getByLabelText(/login/i), { target: { value: 'testuser' } });
+      fireEvent.change(screen.getByLabelText(/hasło/i), { target: { value: 'wrongpassword' } });
+      
+      // Submit the form
+      fireEvent.click(screen.getByRole('button', { name: /zaloguj/i }));
+      
+      // Verify that error message is displayed
+      await waitFor(() => {
+        expect(screen.getByText('Nieprawidłowa nazwa użytkownika lub hasło')).toBeInTheDocument();
+      });
+    });
   });
   
-  test('Login handles network error correctly', async () => {
-    // Konfiguracja mocka dla błędu sieci
-    mock.onPost('http://localhost:8080/login').networkError();
+  describe('Register Component', () => {
+    test('renders registration form correctly', () => {
+      render(
+        <TestWrapper>
+          <Register />
+        </TestWrapper>
+      );
+      
+      expect(screen.getByLabelText(/nazwa użytkownika/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/imię/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/nazwisko/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/^hasło$/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/potwierdź hasło/i)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /zarejestruj/i })).toBeInTheDocument();
+    });
     
-    // Symulacja logowania
-    const result = await simulateLoginSubmit('testuser', 'password123');
+    test('validates form fields correctly', async () => {
+      render(
+        <TestWrapper>
+          <Register />
+        </TestWrapper>
+      );
+      
+      // Submit the form without filling in any fields
+      fireEvent.click(screen.getByRole('button', { name: /zarejestruj/i }));
+      
+      // Verify that validation errors are displayed
+      await waitFor(() => {
+        expect(screen.getByText(/nazwa użytkownika jest wymagana/i)).toBeInTheDocument();
+        expect(screen.getByText(/hasło jest wymagane/i)).toBeInTheDocument();
+        expect(screen.getByText(/imię jest wymagane/i)).toBeInTheDocument();
+        expect(screen.getByText(/nazwisko jest wymagane/i)).toBeInTheDocument();
+        expect(screen.getByText(/email jest wymagany/i)).toBeInTheDocument();
+      });
+    });
     
-    // Sprawdzenie, czy żądanie zostało wykonane
-    expect(mock.history.post.length).toBe(1);
-    
-    // Sprawdzenie, czy błąd został poprawnie przetworzony
-    expect(result.success).toBe(false);
-    expect(result.error.message).toContain('Network Error');
+    test('handles registration submission correctly', async () => {
+      // Mock the register function in AuthContext
+      const mockRegister = jest.fn().mockResolvedValue({ success: true });
+      jest.mock('../hooks/useAuth', () => ({
+        useAuth: () => ({
+          register: mockRegister
+        })
+      }));
+      
+      render(
+        <TestWrapper>
+          <Register />
+        </TestWrapper>
+      );
+      
+      // Fill in the form with valid data
+      fireEvent.change(screen.getByLabelText(/nazwa użytkownika/i), { target: { value: 'testuser' } });
+      fireEvent.change(screen.getByLabelText(/imię/i), { target: { value: 'Test' } });
+      fireEvent.change(screen.getByLabelText(/nazwisko/i), { target: { value: 'User' } });
+      fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'test@example.com' } });
+      fireEvent.change(screen.getByLabelText(/^hasło$/i), { target: { value: 'Password123!' } });
+      fireEvent.change(screen.getByLabelText(/potwierdź hasło/i), { target: { value: 'Password123!' } });
+      
+      // Submit the form
+      fireEvent.click(screen.getByRole('button', { name: /zarejestruj/i }));
+      
+      // Verify that register was called with correct parameters
+      await waitFor(() => {
+        expect(mockRegister).toHaveBeenCalledWith({
+          userName: 'testuser',
+          firstName: 'Test',
+          lastName: 'User',
+          email: 'test@example.com',
+          password: 'Password123!'
+        });
+      });
+    });
   });
 });
-
-// Testy dla rejestracji
-describe('Registration functionality', () => {
-  beforeEach(() => {
-    mock.reset();
-  });
-  
-  test('Successful registration sends correct data format', async () => {
-    // Konfiguracja mocka dla udanej rejestracji
-    mock.onPost('http://localhost:8080/register').reply(200, {
-      token: 'test-token'
-    });
-    
-    // Dane testowe
-    const userData = {
-      userName: 'newuser',
-      password: 'Password123!',
-      firstName: 'Jan',
-      lastName: 'Kowalski',
-      email: 'jan.kowalski@example.com'
-    };
-    
-    // Symulacja rejestracji
-    const result = await simulateRegisterSubmit(userData);
-    
-    // Sprawdzenie, czy żądanie zostało wykonane
-    expect(mock.history.post.length).toBe(1);
-    
-    // Sprawdzenie, czy dane zostały wysłane w poprawnym formacie
-    const requestData = JSON.parse(mock.history.post[0].data);
-    expect(requestData.userName).toBe('newuser');
-    expect(requestData.password).toBe('Password123!');
-    expect(Array.isArray(requestData.password)).toBe(false); // Hasło NIE jest tablicą
-    expect(requestData.firstName).toBe('Jan');
-    expect(requestData.lastName).toBe('Kowalski');
-    expect(requestData.email).toBe('jan.kowalski@example.com');
-    
-    // Sprawdzenie, czy odpowiedź została poprawnie przetworzona
-    expect(result.success).toBe(true);
-    expect(result.data.token).toBe('test-token');
-  });
-  
-  test('Registration handles username already exists error correctly', async () => {
-    // Konfiguracja mocka dla błędu 400
-    mock.onPost('http://localhost:8080/register').reply(400, {
-      error: 'Nazwa użytkownika już istnieje'
-    });
-    
-    // Dane testowe
-    const userData = {
-      userName: 'existinguser',
-      password: 'Password123!',
-      firstName: 'Jan',
-      lastName: 'Kowalski',
-      email: 'jan.kowalski@example.com'
-    };
-    
-    // Symulacja rejestracji
-    const result = await simulateRegisterSubmit(userData);
-    
-    // Sprawdzenie, czy żądanie zostało wykonane
-    expect(mock.history.post.length).toBe(1);
-    
-    // Sprawdzenie, czy błąd został poprawnie przetworzony
-    expect(result.success).toBe(false);
-    expect(result.error.response.status).toBe(400);
-    expect(result.error.response.data.error).toBe('Nazwa użytkownika już istnieje');
-  });
-  
-  test('Registration handles network error correctly', async () => {
-    // Konfiguracja mocka dla błędu sieci
-    mock.onPost('http://localhost:8080/register').networkError();
-    
-    // Dane testowe
-    const userData = {
-      userName: 'newuser',
-      password: 'Password123!',
-      firstName: 'Jan',
-      lastName: 'Kowalski',
-      email: 'jan.kowalski@example.com'
-    };
-    
-    // Symulacja rejestracji
-    const result = await simulateRegisterSubmit(userData);
-    
-    // Sprawdzenie, czy żądanie zostało wykonane
-    expect(mock.history.post.length).toBe(1);
-    
-    // Sprawdzenie, czy błąd został poprawnie przetworzony
-    expect(result.success).toBe(false);
-    expect(result.error.message).toContain('Network Error');
-  });
-});
-
-// Eksport funkcji testowych do ręcznego uruchomienia
-export const manualTests = {
-  testLoginSuccess: () => simulateLoginSubmit('testuser', 'password123'),
-  testLoginFailure: () => simulateLoginSubmit('testuser', 'wrongpassword'),
-  testRegistrationSuccess: () => simulateRegisterSubmit({
-    userName: 'newuser',
-    password: 'Password123!',
-    firstName: 'Jan',
-    lastName: 'Kowalski',
-    email: 'jan.kowalski@example.com'
-  }),
-  testRegistrationFailure: () => simulateRegisterSubmit({
-    userName: 'existinguser',
-    password: 'Password123!',
-    firstName: 'Jan',
-    lastName: 'Kowalski',
-    email: 'jan.kowalski@example.com'
-  })
-};
-
-// Instrukcje dla deweloperów
-console.log(`
-=== INSTRUKCJE TESTOWANIA AUTENTYKACJI ===
-Aby przetestować zmiany w komponentach autentykacji, wykonaj następujące kroki:
-1. Zainstaluj zależności testowe: npm install --save-dev jest axios-mock-adapter
-2. Uruchom testy: npm test auth.test.js
-3. Alternatywnie, możesz uruchomić testy ręcznie w konsoli przeglądarki:
-   - window.manualTests.testLoginSuccess()
-   - window.manualTests.testLoginFailure()
-   - window.manualTests.testRegistrationSuccess()
-   - window.manualTests.testRegistrationFailure()
-`);
