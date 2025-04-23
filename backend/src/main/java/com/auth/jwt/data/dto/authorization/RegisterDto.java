@@ -6,24 +6,24 @@ import jakarta.validation.constraints.Pattern;
 
 public class RegisterDto {
     
-    @NotBlank(message = "Username is required")
+    @NotBlank(message = "Nazwa użytkownika jest wymagana")
     private String userName;
     
-    @NotBlank(message = "Password is required")
+    @NotBlank(message = "Hasło jest wymagane")
     @Pattern(
         regexp = "^(?=.*[A-Z])(?=.*[!@#$%^&*(),.?\":{}|<>]).{8,}$",
-        message = "Password must contain at least one uppercase letter and one special character"
+        message = "Hasło musi zawierać co najmniej jedną wielką literę i jeden znak specjalny"
     )
     private char[] password;
     
-    @NotBlank(message = "First name is required")
+    @NotBlank(message = "Imię jest wymagane")
     private String firstName;
     
-    @NotBlank(message = "Last name is required")
+    @NotBlank(message = "Nazwisko jest wymagane")
     private String lastName;
     
-    @NotBlank(message = "Email is required")
-    @Email(message = "Email must be valid")
+    @NotBlank(message = "Email jest wymagany")
+    @Email(message = "Email musi być poprawny")
     private String email;
 
     // Default constructor

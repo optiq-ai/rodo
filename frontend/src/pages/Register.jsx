@@ -36,31 +36,31 @@ const Register = () => {
     const newErrors = {};
     
     if (!formData.userName.trim()) {
-      newErrors.userName = 'Username is required';
+      newErrors.userName = 'Nazwa użytkownika jest wymagana';
     }
     
     if (!formData.password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = 'Hasło jest wymagane';
     } else if (!validatePassword(formData.password)) {
-      newErrors.password = 'Password must contain at least one uppercase letter and one special character';
+      newErrors.password = 'Hasło musi zawierać co najmniej jedną wielką literę i jeden znak specjalny';
     }
     
     if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
+      newErrors.confirmPassword = 'Hasła nie są identyczne';
     }
     
     if (!formData.firstName.trim()) {
-      newErrors.firstName = 'First name is required';
+      newErrors.firstName = 'Imię jest wymagane';
     }
     
     if (!formData.lastName.trim()) {
-      newErrors.lastName = 'Last name is required';
+      newErrors.lastName = 'Nazwisko jest wymagane';
     }
     
     if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
+      newErrors.email = 'Email jest wymagany';
     } else if (!validateEmail(formData.email)) {
-      newErrors.email = 'Email is invalid';
+      newErrors.email = 'Nieprawidłowy format adresu email';
     }
     
     setErrors(newErrors);
@@ -101,7 +101,7 @@ const Register = () => {
         navigate('/dashboard');
       } catch (error) {
         console.error('Registration error:', error);
-        setErrorMessage(error.response?.data?.error || 'Registration failed. Please try again.');
+        setErrorMessage(error.response?.data?.error || 'Rejestracja nie powiodła się. Spróbuj ponownie.');
         setShowError(true);
         
         // Hide error after 5 seconds
@@ -115,7 +115,7 @@ const Register = () => {
   return (
     <div className="register-container">
       <div className="register-card">
-        <h2>Create Account</h2>
+        <h2>Utwórz konto</h2>
         
         {showError && (
           <div className="error-popup">
@@ -125,7 +125,7 @@ const Register = () => {
         
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="userName">Username</label>
+            <label htmlFor="userName">Nazwa użytkownika</label>
             <input
               type="text"
               id="userName"
@@ -138,7 +138,7 @@ const Register = () => {
           </div>
           
           <div className="form-group">
-            <label htmlFor="firstName">First Name</label>
+            <label htmlFor="firstName">Imię</label>
             <input
               type="text"
               id="firstName"
@@ -151,7 +151,7 @@ const Register = () => {
           </div>
           
           <div className="form-group">
-            <label htmlFor="lastName">Last Name</label>
+            <label htmlFor="lastName">Nazwisko</label>
             <input
               type="text"
               id="lastName"
@@ -177,7 +177,7 @@ const Register = () => {
           </div>
           
           <div className="form-group">
-            <label htmlFor="password">Password</label>
+            <label htmlFor="password">Hasło</label>
             <input
               type="password"
               id="password"
@@ -190,7 +190,7 @@ const Register = () => {
           </div>
           
           <div className="form-group">
-            <label htmlFor="confirmPassword">Confirm Password</label>
+            <label htmlFor="confirmPassword">Potwierdź hasło</label>
             <input
               type="password"
               id="confirmPassword"
@@ -202,11 +202,11 @@ const Register = () => {
             {errors.confirmPassword && <span className="error-text">{errors.confirmPassword}</span>}
           </div>
           
-          <button type="submit" className="register-button">Register</button>
+          <button type="submit" className="register-button">Zarejestruj się</button>
         </form>
         
         <div className="login-link">
-          Already have an account? <Link to="/login">Login</Link>
+          Masz już konto? <Link to="/login">Zaloguj się</Link>
         </div>
       </div>
     </div>

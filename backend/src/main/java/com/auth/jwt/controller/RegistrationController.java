@@ -53,25 +53,25 @@ public class RegistrationController {
         
         // Validate email format
         if (!EMAIL_PATTERN.matcher(registerDto.getEmail()).matches()) {
-            response.put("error", "Invalid email format");
+            response.put("error", "Nieprawidłowy format adresu email");
             return ResponseEntity.badRequest().body(response);
         }
         
         // Validate password requirements
         if (!PASSWORD_PATTERN.matcher(String.valueOf(registerDto.getPassword())).matches()) {
-            response.put("error", "Password must contain at least one uppercase letter and one special character");
+            response.put("error", "Hasło musi zawierać co najmniej jedną wielką literę i jeden znak specjalny");
             return ResponseEntity.badRequest().body(response);
         }
         
         // Check if username already exists
         if (employeeRepository.findByUserName(registerDto.getUserName()) != null) {
-            response.put("error", "Username already exists");
+            response.put("error", "Nazwa użytkownika już istnieje");
             return ResponseEntity.badRequest().body(response);
         }
         
         // Check if email already exists
         if (employeeRepository.findByEmail(registerDto.getEmail()) != null) {
-            response.put("error", "Email already exists");
+            response.put("error", "Adres email już istnieje");
             return ResponseEntity.badRequest().body(response);
         }
         
@@ -103,11 +103,11 @@ public class RegistrationController {
             
             // Return success response with token
             response.put("token", token);
-            response.put("message", "Registration successful");
+            response.put("message", "Rejestracja zakończona pomyślnie");
             return ResponseEntity.ok(response);
             
         } catch (Exception e) {
-            response.put("error", "Registration failed: " + e.getMessage());
+            response.put("error", "Rejestracja nie powiodła się: " + e.getMessage());
             return ResponseEntity.badRequest().body(response);
         }
     }
