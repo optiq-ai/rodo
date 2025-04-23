@@ -16,12 +16,15 @@ const LoginForm = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
+      // Używamy userName zamiast login dla spójności z backendem
+      // Zachowujemy kompatybilność z istniejącym interfejsem użytkownika
       const response = await axios.post("http://localhost:8080/login", {
-        login,
-        password: password ? password.split('') : [],
+        userName: login, // Zmiana nazwy pola na userName
+        password: password ? password.split('') : [], // Zachowujemy konwersję hasła na tablicę znaków
       });
-      console.log(password);
-      console.log(login);
+      
+      console.log("Logowanie dla użytkownika:", login);
+      
       const { token } = response.data;
       localStorage.setItem("token", token);
       

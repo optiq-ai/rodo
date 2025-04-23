@@ -5,20 +5,34 @@ import java.util.Objects;
 
 public class CredentialsDto {
 
-    private String login;
+    private String userName;
     private char[] password;
 
-    public CredentialsDto(String login, char[] password) {
-        this.login = login;
+    public CredentialsDto() {
+        // Pusty konstruktor dla deserializacji JSON
+    }
+
+    public CredentialsDto(String userName, char[] password) {
+        this.userName = userName;
         this.password = password;
     }
 
+    // Zachowujemy metodę getLogin dla kompatybilności z frontendem
     public String getLogin() {
-        return login;
+        return userName;
     }
 
+    // Zachowujemy metodę setLogin dla kompatybilności z frontendem
     public void setLogin(String login) {
-        this.login = login;
+        this.userName = login;
+    }
+
+    public String getUserName() {
+        return userName;
+    }
+
+    public void setUserName(String userName) {
+        this.userName = userName;
     }
 
     public char[] getPassword() {
@@ -32,7 +46,7 @@ public class CredentialsDto {
     @Override
     public String toString() {
         return "CredentialsDto{" +
-                "login='" + login + '\'' +
+                "userName='" + userName + '\'' +
                 ", password=" + Arrays.toString(password) +
                 '}';
     }
@@ -42,12 +56,12 @@ public class CredentialsDto {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         CredentialsDto that = (CredentialsDto) o;
-        return Arrays.equals(password, that.password) && Objects.equals(login, that.login);
+        return Arrays.equals(password, that.password) && Objects.equals(userName, that.userName);
     }
 
     @Override
     public int hashCode() {
-        int result = Objects.hash(login);
+        int result = Objects.hash(userName);
         result = 31 * result + Arrays.hashCode(password);
         return result;
     }

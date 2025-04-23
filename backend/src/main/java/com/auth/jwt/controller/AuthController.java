@@ -33,14 +33,15 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<Map<String, String>> login(@RequestBody CredentialsDto credentialsDto) {
-        Employee employee = employeeRepository.findByLogin(credentialsDto.getLogin());
+        // Używamy getUserName zamiast getLogin dla spójności
+        Employee employee = employeeRepository.findByUserName(credentialsDto.getUserName());
         
         if (employee == null) {
-            logger.debug("Użytkownik nie znaleziony: {}", credentialsDto.getLogin());
+            logger.debug("Użytkownik nie znaleziony: {}", credentialsDto.getUserName());
             return ResponseEntity.status(401).body(Map.of("message", "Invalid username or password"));
         }
         
-        // Dodajemy debugowanie, aby sprawdzić, co otrzymujemy z frontendu
+        // Konwertujemy tablicę znaków na String
         String passwordFromRequest = new String(credentialsDto.getPassword());
         logger.debug("Hasło z żądania: {}", passwordFromRequest);
         
