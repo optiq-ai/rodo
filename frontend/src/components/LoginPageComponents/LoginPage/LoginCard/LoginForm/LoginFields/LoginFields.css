@@ -5,4 +5,6 @@
   flex-direction: column;
   align-self: center;
   justify-self: center;
+  gap: 15px;
+  width: 80%;
 }

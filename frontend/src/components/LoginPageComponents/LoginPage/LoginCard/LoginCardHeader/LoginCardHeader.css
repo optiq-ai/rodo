@@ -1,7 +1,8 @@
 .login-card-header {
   align-self: center;
   justify-self: center;
-  color: orange;
+  color: var(--primary-color, #4052b5);
   font-size: xx-large;
+  font-weight: 500;
   grid-row: 1;
 }

@@ -4,13 +4,15 @@
   justify-self: center;
   height: 40%;
   width: 20%;
-  border-radius: 5px;
+  border-radius: 4px;
   border: none;
-  background-color: orange;
+  background-color: var(--primary-color, #4052b5);
+  color: white;
   font-size: large;
   cursor: pointer;
+  transition: background-color 0.2s;
 }
 
 .login-button:hover {
-  background-color: rgb(238, 176, 60);
+  background-color: var(--primary-dark, #303f9f);
 }
