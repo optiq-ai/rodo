@@ -41,7 +41,7 @@ public class UserAuthProvider {
     public Authentication validateToken(String token) {
         JWTVerifier verifier = JWT.require(Algorithm.HMAC256(secretKey)).build();
         DecodedJWT decoded = verifier.verify(token);
-        Employee user = employeeRepository.findByLogin(decoded.getIssuer());
+        Employee user = employeeRepository.findByUserName(decoded.getIssuer());
         if (user == null) {
             throw new RuntimeException("User not found");
         }
