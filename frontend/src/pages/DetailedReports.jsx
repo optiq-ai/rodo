@@ -14,6 +14,7 @@ import {
   Title
 } from 'chart.js';
 import { Radar, Bar, Line } from 'react-chartjs-2';
+import AreaDetailsModal from '../components/modals/AreaDetailsModal';
 
 // Rejestracja komponentów Chart.js
 ChartJS.register(
@@ -44,6 +45,10 @@ const DetailedReports = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [exportFormat, setExportFormat] = useState('pdf');
   const [alertMessage, setAlertMessage] = useState(null);
+  
+  // Stan dla modala szczegółów obszaru
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedArea, setSelectedArea] = useState(null);
 
   // Symulacja ładowania danych
   useEffect(() => {
@@ -381,7 +386,14 @@ const DetailedReports = () => {
                     </Badge>
                   </td>
                   <td>
-                    <Button variant="outline-primary" size="sm">
+                    <Button 
+                      variant="outline-primary" 
+                      size="sm"
+                      onClick={() => {
+                        setSelectedArea(area);
+                        setShowDetailsModal(true);
+                      }}
+                    >
                       Szczegóły
                     </Button>
                   </td>
@@ -436,6 +448,13 @@ const DetailedReports = () => {
           {alertMessage.text}
         </Alert>
       )}
+      
+      {/* Modal szczegółów obszaru */}
+      <AreaDetailsModal 
+        show={showDetailsModal} 
+        onHide={() => setShowDetailsModal(false)} 
+        area={selectedArea} 
+      />
       
       <Row className="mb-4">
         <Col>
