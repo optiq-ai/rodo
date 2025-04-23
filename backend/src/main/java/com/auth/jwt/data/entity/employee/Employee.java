@@ -14,7 +14,7 @@ public class Employee {
     @Column(name = "id") // Database column mapping
     private Long id;
 
-    @Column(name = "username")
+    @Column(name = "user_name")
     private String userName;
 
     @Column(name = "password")
