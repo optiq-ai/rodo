@@ -168,7 +168,7 @@ VALUES ('Test Company', 'Test Street 123', 'Test City', '12-345', '1234567890', 
 
 -- Dodanie subskrypcji dla użytkownika testowego
 INSERT INTO subscription (plan, status, next_billing_date, payment_method, employee_id)
-VALUES ('basic', 'active', CURRENT_DATE + INTERVAL '30 days', 'card', 2);
+VALUES ('basic', 'active', CURRENT_DATE + INTERVAL '30 DAY', 'card', 2);
 
 -- Dodanie przykładowej oceny RODO
 INSERT INTO assessment (name, description, status, employee_id)
@@ -223,13 +223,13 @@ VALUES ('Prawa osób', 40, 'high', 1);
 
 -- Dodanie przykładowych rekomendacji
 INSERT INTO recommendation (text, priority, status, due_date, report_id)
-VALUES ('Opracować procedurę realizacji prawa dostępu do danych', 'high', 'open', CURRENT_DATE + INTERVAL '14 days', 1);
+VALUES ('Opracować procedurę realizacji prawa dostępu do danych', 'high', 'open', CURRENT_DATE + INTERVAL '14 DAY', 1);
 
 INSERT INTO recommendation (text, priority, status, due_date, report_id)
-VALUES ('Wdrożyć mechanizm automatycznego usuwania danych po osiągnięciu celu przetwarzania', 'medium', 'open', CURRENT_DATE + INTERVAL '30 days', 1);
+VALUES ('Wdrożyć mechanizm automatycznego usuwania danych po osiągnięciu celu przetwarzania', 'medium', 'open', CURRENT_DATE + INTERVAL '30 DAY', 1);
 
 INSERT INTO recommendation (text, priority, status, due_date, report_id)
-VALUES ('Przeszkolić pracowników w zakresie zasad przetwarzania danych osobowych', 'low', 'in_progress', CURRENT_DATE + INTERVAL '60 days', 1);
+VALUES ('Przeszkolić pracowników w zakresie zasad przetwarzania danych osobowych', 'low', 'in_progress', CURRENT_DATE + INTERVAL '60 DAY', 1);
 
 -- Dodanie przykładowej oceny RODO (zakończonej)
 INSERT INTO assessment (name, description, status, employee_id)
@@ -257,4 +257,4 @@ VALUES ('Bezpieczeństwo danych', 70, 'medium', 2);
 
 -- Dodanie przykładowych rekomendacji
 INSERT INTO recommendation (text, priority, status, due_date, report_id)
-VALUES ('Wdrożyć szyfrowanie danych w spoczynku', 'high', 'open', CURRENT_DATE + INTERVAL '21 days', 2);
+VALUES ('Wdrożyć szyfrowanie danych w spoczynku', 'high', 'open', CURRENT_DATE + INTERVAL '21 DAY', 2);
