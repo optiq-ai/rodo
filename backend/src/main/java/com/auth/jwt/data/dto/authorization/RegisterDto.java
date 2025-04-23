@@ -32,7 +32,7 @@ public class RegisterDto {
     }
 
     // Constructor with all fields
-    public RegisterDto(String userName, char[] password, String firstName, String lastName, String email) {
+    public RegisterDto(String userName, String password, String firstName, String lastName, String email) {
         this.userName = userName;
         this.password = password;
         this.firstName = firstName;

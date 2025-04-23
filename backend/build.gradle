@@ -18,6 +18,11 @@ dependencies {
 	implementation 'org.postgresql:postgresql:42.6.0'
 	// Starter for unit testing
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+
+	// MariaDB database driver
+	implementation 'org.mariadb.jdbc:mariadb-java-client:3.2.0'
+
+
 	// Spring Boot Starter for web applications
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	// Spring Boot developer tools (automatic application reloading, etc.)
