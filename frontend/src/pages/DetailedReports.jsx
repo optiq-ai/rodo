@@ -50,14 +50,46 @@ const DetailedReports = () => {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedArea, setSelectedArea] = useState(null);
 
-  // Symulacja ładowania danych
+  // Pobieranie danych z API
   useEffect(() => {
-    // W rzeczywistej aplikacji tutaj byłoby pobieranie danych z API
-    setTimeout(() => {
-      setReportData(generateMockData());
-      setLoading(false);
-    }, 800);
-  }, []);
+    const fetchReportData = async () => {
+      try {
+        setLoading(true);
+        
+        // Przygotowanie parametrów zapytania
+        const queryParams = new URLSearchParams();
+        if (filters.dateRange !== 'all') queryParams.append('dateRange', filters.dateRange);
+        if (filters.riskCategory !== 'all') queryParams.append('riskCategory', filters.riskCategory);
+        if (filters.riskLevel !== 'all') queryParams.append('riskLevel', filters.riskLevel);
+        if (filters.sortBy !== 'date') queryParams.append('sortBy', filters.sortBy);
+        
+        const url = `http://localhost:8080/reports${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+        
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setReportData(data);
+        } else {
+          console.error('Błąd podczas pobierania danych raportu:', response.statusText);
+          // Tymczasowo używamy danych mockowych w przypadku błędu
+          setReportData(generateMockData());
+        }
+      } catch (error) {
+        console.error('Błąd podczas pobierania danych raportu:', error);
+        // Tymczasowo używamy danych mockowych w przypadku błędu
+        setReportData(generateMockData());
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchReportData();
+  }, [filters]);
 
   // Funkcja generująca przykładowe dane
   const generateMockData = () => {
@@ -110,11 +142,43 @@ const DetailedReports = () => {
   };
 
   // Obsługa eksportu
-  const handleExport = () => {
-    setAlertMessage({
-      type: 'success',
-      text: `Raport został wyeksportowany do formatu ${exportFormat.toUpperCase()}`
-    });
+  const handleExport = async () => {
+    try {
+      const response = await fetch(`http://localhost:8080/reports/export?format=${exportFormat}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `raport-rodo.${exportFormat}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        setAlertMessage({
+          type: 'success',
+          text: `Raport został wyeksportowany do formatu ${exportFormat.toUpperCase()}`
+        });
+      } else {
+        setAlertMessage({
+          type: 'danger',
+          text: `Błąd podczas eksportu raportu: ${response.statusText}`
+        });
+      }
+    } catch (error) {
+      console.error('Błąd podczas eksportu raportu:', error);
+      setAlertMessage({
+        type: 'danger',
+        text: 'Błąd podczas eksportu raportu'
+      });
+    }
     
     setTimeout(() => {
       setAlertMessage(null);

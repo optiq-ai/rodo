@@ -44,6 +44,9 @@ const UserSettings = () => {
     paymentMethod: 'card'
   });
   
+  // Dostępne plany subskrypcji
+  const [availablePlans, setAvailablePlans] = React.useState([]);
+  
   // Dane zmiany hasła
   const [passwordData, setPasswordData] = React.useState({
     currentPassword: '',
@@ -51,30 +54,92 @@ const UserSettings = () => {
     confirmPassword: ''
   });
   
-  // Symulacja ładowania danych
+  // Pobieranie danych z API
   React.useEffect(() => {
-    // Tutaj byłoby faktyczne pobieranie danych z API
-    setTimeout(() => {
-      setUserData({
-        username: currentUser?.username || 'user123',
-        email: currentUser?.email || 'user@example.com',
-        firstName: 'Jan',
-        lastName: 'Kowalski',
-        phone: '+48 123 456 789',
-        position: 'Administrator RODO',
-        notifications: true
-      });
-      
-      setCompanyData({
-        name: 'Firma Example Sp. z o.o.',
-        address: 'ul. Przykładowa 123',
-        city: 'Warszawa',
-        postalCode: '00-001',
-        nip: '1234567890',
-        regon: '123456789',
-        industry: 'IT'
-      });
-    }, 500);
+    const fetchUserData = async () => {
+      try {
+        // Pobieranie danych profilu użytkownika
+        const userResponse = await fetch('http://localhost:8080/users/profile', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        
+        if (userResponse.ok) {
+          const userData = await userResponse.json();
+          setUserData({
+            username: userData.username || currentUser?.username || '',
+            email: userData.email || currentUser?.email || '',
+            firstName: userData.firstName || '',
+            lastName: userData.lastName || '',
+            phone: userData.phone || '',
+            position: userData.position || '',
+            notifications: userData.notifications || false
+          });
+        } else {
+          console.error('Błąd podczas pobierania danych użytkownika:', userResponse.statusText);
+        }
+        
+        // Pobieranie danych firmy
+        const companyResponse = await fetch('http://localhost:8080/users/company', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        
+        if (companyResponse.ok) {
+          const companyData = await companyResponse.json();
+          setCompanyData({
+            name: companyData.name || '',
+            address: companyData.address || '',
+            city: companyData.city || '',
+            postalCode: companyData.postalCode || '',
+            nip: companyData.nip || '',
+            regon: companyData.regon || '',
+            industry: companyData.industry || ''
+          });
+        } else {
+          console.error('Błąd podczas pobierania danych firmy:', companyResponse.statusText);
+        }
+        
+        // Pobieranie danych subskrypcji
+        const subscriptionResponse = await fetch('http://localhost:8080/subscriptions', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        
+        if (subscriptionResponse.ok) {
+          const subscriptionData = await subscriptionResponse.json();
+          setSubscriptionData({
+            plan: subscriptionData.plan || 'basic',
+            status: subscriptionData.status || 'active',
+            nextBillingDate: subscriptionData.nextBillingDate || '',
+            paymentMethod: subscriptionData.paymentMethod || 'card'
+          });
+        } else {
+          console.error('Błąd podczas pobierania danych subskrypcji:', subscriptionResponse.statusText);
+        }
+        
+        // Pobieranie dostępnych planów subskrypcji
+        const plansResponse = await fetch('http://localhost:8080/subscriptions/plans', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        
+        if (plansResponse.ok) {
+          const plansData = await plansResponse.json();
+          setAvailablePlans(plansData);
+        } else {
+          console.error('Błąd podczas pobierania dostępnych planów:', plansResponse.statusText);
+        }
+      } catch (error) {
+        console.error('Błąd podczas pobierania danych:', error);
+      }
+    };
+    
+    fetchUserData();
   }, [currentUser]);
   
   const handleUserDataChange = (e) => {
@@ -101,15 +166,43 @@ const UserSettings = () => {
     });
   };
   
-  const handleSaveProfile = (e) => {
+  const handleSaveProfile = async (e) => {
     e.preventDefault();
-    // Tutaj byłoby faktyczne zapisywanie danych do API
-    setSaveSuccess(true);
-    setSaveError('');
+    try {
+      const response = await fetch('http://localhost:8080/users/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          firstName: userData.firstName,
+          lastName: userData.lastName,
+          phone: userData.phone,
+          position: userData.position,
+          notifications: userData.notifications
+        })
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        setSaveSuccess(true);
+        setSaveError('');
+      } else {
+        const errorData = await response.json();
+        setSaveError(errorData.message || 'Wystąpił błąd podczas zapisywania danych profilu');
+        setSaveSuccess(false);
+      }
+    } catch (error) {
+      console.error('Błąd podczas zapisywania danych profilu:', error);
+      setSaveError('Wystąpił błąd podczas zapisywania danych profilu');
+      setSaveSuccess(false);
+    }
+    
     setTimeout(() => setSaveSuccess(false), 3000);
   };
   
-  const handleSavePassword = (e) => {
+  const handleSavePassword = async (e) => {
     e.preventDefault();
     
     if (passwordData.newPassword !== passwordData.confirmPassword) {
@@ -124,34 +217,109 @@ const UserSettings = () => {
       return;
     }
     
-    // Tutaj byłoby faktyczne zapisywanie hasła do API
-    setSaveSuccess(true);
-    setSaveError('');
-    setPasswordData({
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: ''
-    });
-    setTimeout(() => setSaveSuccess(false), 3000);
-  };
-  
-  const handleSaveCompany = (e) => {
-    e.preventDefault();
-    // Tutaj byłoby faktyczne zapisywanie danych firmy do API
-    setSaveSuccess(true);
-    setSaveError('');
-    setTimeout(() => setSaveSuccess(false), 3000);
-  };
-  
-  const handleCancelSubscription = () => {
-    if (window.confirm('Czy na pewno chcesz anulować subskrypcję? Ta operacja spowoduje utratę dostępu do zaawansowanych funkcji po zakończeniu bieżącego okresu rozliczeniowego.')) {
-      // Tutaj byłoby faktyczne anulowanie subskrypcji w API
-      setSubscriptionData({
-        ...subscriptionData,
-        status: 'canceled'
+    try {
+      const response = await fetch('http://localhost:8080/users/password', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword
+        })
       });
-      setSaveSuccess(true);
-      setSaveError('');
+      
+      if (response.ok) {
+        const result = await response.json();
+        setSaveSuccess(true);
+        setSaveError('');
+        setPasswordData({
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: ''
+        });
+      } else {
+        const errorData = await response.json();
+        setSaveError(errorData.message || 'Wystąpił błąd podczas zmiany hasła');
+        setSaveSuccess(false);
+      }
+    } catch (error) {
+      console.error('Błąd podczas zmiany hasła:', error);
+      setSaveError('Wystąpił błąd podczas zmiany hasła');
+      setSaveSuccess(false);
+    }
+    
+    setTimeout(() => setSaveSuccess(false), 3000);
+  };
+  
+  const handleSaveCompany = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await fetch('http://localhost:8080/users/company', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          name: companyData.name,
+          address: companyData.address,
+          city: companyData.city,
+          postalCode: companyData.postalCode,
+          nip: companyData.nip,
+          regon: companyData.regon,
+          industry: companyData.industry
+        })
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        setSaveSuccess(true);
+        setSaveError('');
+      } else {
+        const errorData = await response.json();
+        setSaveError(errorData.message || 'Wystąpił błąd podczas zapisywania danych firmy');
+        setSaveSuccess(false);
+      }
+    } catch (error) {
+      console.error('Błąd podczas zapisywania danych firmy:', error);
+      setSaveError('Wystąpił błąd podczas zapisywania danych firmy');
+      setSaveSuccess(false);
+    }
+    
+    setTimeout(() => setSaveSuccess(false), 3000);
+  };
+  
+  const handleCancelSubscription = async () => {
+    if (window.confirm('Czy na pewno chcesz anulować subskrypcję? Ta operacja spowoduje utratę dostępu do zaawansowanych funkcji po zakończeniu bieżącego okresu rozliczeniowego.')) {
+      try {
+        const response = await fetch('http://localhost:8080/subscriptions/cancel', {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          setSubscriptionData({
+            ...subscriptionData,
+            status: 'canceled'
+          });
+          setSaveSuccess(true);
+          setSaveError('');
+        } else {
+          const errorData = await response.json();
+          setSaveError(errorData.message || 'Wystąpił błąd podczas anulowania subskrypcji');
+          setSaveSuccess(false);
+        }
+      } catch (error) {
+        console.error('Błąd podczas anulowania subskrypcji:', error);
+        setSaveError('Wystąpił błąd podczas anulowania subskrypcji');
+        setSaveSuccess(false);
+      }
+      
       setTimeout(() => setSaveSuccess(false), 3000);
     }
   };
@@ -163,21 +331,53 @@ const UserSettings = () => {
     setShowModal(true);
   };
   
-  const handleModalClose = (success) => {
+  const handleChangePlan = async (plan) => {
+    try {
+      const response = await fetch('http://localhost:8080/subscriptions/plan', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          plan: plan
+        })
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        setSubscriptionData({
+          ...subscriptionData,
+          plan: result.plan,
+          status: 'active',
+          nextBillingDate: result.nextBillingDate
+        });
+        return true;
+      } else {
+        const errorData = await response.json();
+        setSaveError(errorData.message || 'Wystąpił błąd podczas zmiany planu subskrypcji');
+        setSaveSuccess(false);
+        return false;
+      }
+    } catch (error) {
+      console.error('Błąd podczas zmiany planu subskrypcji:', error);
+      setSaveError('Wystąpił błąd podczas zmiany planu subskrypcji');
+      setSaveSuccess(false);
+      return false;
+    }
+  };
+  
+  const handleModalClose = async (success) => {
     setShowModal(false);
     
     // Jeśli operacja zakończyła się sukcesem, zaktualizuj dane subskrypcji
     if (success) {
-      setSubscriptionData({
-        ...subscriptionData,
-        plan: selectedPlan,
-        status: 'active',
-        nextBillingDate: '2025-05-15', // Przykładowa data
-        paymentMethod: 'card'
-      });
+      const planChangeSuccess = await handleChangePlan(selectedPlan);
       
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
+      if (planChangeSuccess) {
+        setSaveSuccess(true);
+        setTimeout(() => setSaveSuccess(false), 3000);
+      }
     }
   };
   

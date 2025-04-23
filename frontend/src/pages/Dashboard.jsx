@@ -12,47 +12,22 @@ const Dashboard = () => {
   const [toastVariant, setToastVariant] = useState('success');
 
   useEffect(() => {
-    // Symulacja pobierania danych z API
+    // Pobieranie danych z API
     const fetchAssessments = async () => {
       try {
-        // W rzeczywistości będzie to wywołanie do backendu
-        // const response = await assessmentService.getAssessments();
-        
-        // Tymczasowe dane dla szkieletu
-        const mockAssessments = [
-          {
-            id: 1,
-            name: 'Ocena RODO - Dział IT',
-            createdAt: '2025-04-15',
-            status: 'W TRAKCIE',
-            progress: 45,
-            positiveAreas: 12,
-            warningAreas: 8,
-            negativeAreas: 3
-          },
-          {
-            id: 2,
-            name: 'Ocena RODO - Dział HR',
-            createdAt: '2025-04-10',
-            status: 'ZAKOŃCZONA',
-            progress: 100,
-            positiveAreas: 30,
-            warningAreas: 15,
-            negativeAreas: 4
-          },
-          {
-            id: 3,
-            name: 'Ocena RODO - Dział Marketingu',
-            createdAt: '2025-04-05',
-            status: 'W TRAKCIE',
-            progress: 75,
-            positiveAreas: 20,
-            warningAreas: 10,
-            negativeAreas: 2
+        const response = await fetch('http://localhost:8080/assessments', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
-        ];
+        });
         
-        setAssessments(mockAssessments);
+        if (response.ok) {
+          const assessmentsData = await response.json();
+          setAssessments(assessmentsData);
+        } else {
+          console.error('Błąd podczas pobierania ocen:', response.statusText);
+          showToastMessage('Błąd podczas pobierania ocen', 'danger');
+        }
       } catch (error) {
         console.error('Błąd podczas pobierania ocen:', error);
         showToastMessage('Błąd podczas pobierania ocen', 'danger');
@@ -64,16 +39,25 @@ const Dashboard = () => {
     fetchAssessments();
   }, []);
 
-  const handleDeleteAssessment = (assessmentId) => {
+  const handleDeleteAssessment = async (assessmentId) => {
     try {
-      // W rzeczywistości będzie to wywołanie do backendu
-      // await assessmentService.deleteAssessment(assessmentId);
+      const response = await fetch(`http://localhost:8080/assessments/${assessmentId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
       
-      // Tymczasowa implementacja - usunięcie z lokalnego stanu
-      const updatedAssessments = assessments.filter(assessment => assessment.id !== assessmentId);
-      setAssessments(updatedAssessments);
-      
-      showToastMessage('Ocena została pomyślnie usunięta', 'success');
+      if (response.ok) {
+        // Usunięcie z lokalnego stanu po pomyślnym usunięciu z backendu
+        const updatedAssessments = assessments.filter(assessment => assessment.id !== assessmentId);
+        setAssessments(updatedAssessments);
+        showToastMessage('Ocena została pomyślnie usunięta', 'success');
+      } else {
+        const errorData = await response.json();
+        console.error('Błąd podczas usuwania oceny:', errorData);
+        showToastMessage(errorData.message || 'Błąd podczas usuwania oceny', 'danger');
+      }
     } catch (error) {
       console.error('Błąd podczas usuwania oceny:', error);
       showToastMessage('Błąd podczas usuwania oceny', 'danger');

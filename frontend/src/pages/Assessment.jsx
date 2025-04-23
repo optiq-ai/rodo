@@ -29,190 +29,39 @@ const Assessment = () => {
         setLoading(true);
         
         if (id && id !== 'new') {
-          // W rzeczywistości będzie to wywołanie do backendu
-          // const response = await assessmentService.getAssessment(id);
-          
-          // Tymczasowe dane dla szkieletu
-          const mockChapters = [
-            {
-              id: 1,
-              name: 'I. Organizacja systemu ochrony DO',
-              description: 'Planowanie i organizacja systemu ochrony danych osobowych',
-              areas: [
-                {
-                  id: 1,
-                  name: 'I.1 Polityka w zakresie ochrony DO',
-                  description: 'Polityka i procedury przetwarzania danych osobowych',
-                  score: 'POZYTYWNA',
-                  comment: '',
-                  requirements: [
-                    {
-                      id: 1,
-                      text: 'Czy opracowano i wdrożono politykę ochrony danych osobowych?',
-                      value: 'TAK',
-                      comment: ''
-                    },
-                    {
-                      id: 2,
-                      text: 'Czy polityka ochrony danych osobowych jest aktualna i zgodna z RODO?',
-                      value: 'TAK',
-                      comment: ''
-                    },
-                    {
-                      id: 3,
-                      text: 'Czy pracownicy zostali zapoznani z polityką ochrony danych osobowych?',
-                      value: 'TAK',
-                      comment: ''
-                    }
-                  ]
-                },
-                {
-                  id: 2,
-                  name: 'I.2 Wyznaczenie ADO',
-                  description: 'Wyznaczenie Administratora Danych Osobowych',
-                  score: 'ZASTRZEŻENIA',
-                  comment: 'Należy zaktualizować dokumentację',
-                  requirements: [
-                    {
-                      id: 4,
-                      text: 'Czy w jednostce nastąpiło powierzenie zadań ADO wyznaczonym podmiotom?',
-                      value: 'TAK',
-                      comment: ''
-                    },
-                    {
-                      id: 5,
-                      text: 'Czy zakres zadań ADO został jasno określony?',
-                      value: 'NIE',
-                      comment: 'Brak formalnego dokumentu określającego zakres zadań'
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              id: 2,
-              name: 'II. Prawo do przetwarzania DO',
-              description: 'Zapewnienie poprawności procesów przetwarzania danych osobowych',
-              areas: [
-                {
-                  id: 3,
-                  name: 'II.1 Podstawy prawne przetwarzania DO',
-                  description: 'Podstawy prawne przetwarzania danych osobowych',
-                  score: 'W REALIZACJI',
-                  comment: 'Trwa weryfikacja podstaw prawnych',
-                  requirements: [
-                    {
-                      id: 6,
-                      text: 'Czy zidentyfikowano podstawy prawne przetwarzania danych osobowych?',
-                      value: 'W REALIZACJI',
-                      comment: 'Trwa proces identyfikacji'
-                    }
-                  ]
-                }
-              ]
+          // Pobieranie istniejącej oceny
+          const response = await fetch(`http://localhost:8080/assessments/${id}`, {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
-          ];
-          
-          setAssessment({
-            id: id,
-            name: 'Ocena RODO - Dział IT',
-            description: 'Ocena zgodności z RODO dla działu IT',
-            status: 'W TRAKCIE',
-            chapters: mockChapters
           });
+          
+          if (response.ok) {
+            const assessmentData = await response.json();
+            setAssessment(assessmentData);
+          } else {
+            setError('Nie udało się pobrać danych oceny');
+          }
         } else {
-          // Pobieranie struktury formularza dla nowej oceny
-          // W rzeczywistości będzie to wywołanie do backendu
-          // const response = await assessmentService.getAssessmentTemplate();
-          
-          // Tymczasowe dane dla szkieletu
-          const mockChapters = [
-            {
-              id: 1,
-              name: 'I. Organizacja systemu ochrony DO',
-              description: 'Planowanie i organizacja systemu ochrony danych osobowych',
-              areas: [
-                {
-                  id: 1,
-                  name: 'I.1 Polityka w zakresie ochrony DO',
-                  description: 'Polityka i procedury przetwarzania danych osobowych',
-                  score: '',
-                  comment: '',
-                  requirements: [
-                    {
-                      id: 1,
-                      text: 'Czy opracowano i wdrożono politykę ochrony danych osobowych?',
-                      value: '',
-                      comment: ''
-                    },
-                    {
-                      id: 2,
-                      text: 'Czy polityka ochrony danych osobowych jest aktualna i zgodna z RODO?',
-                      value: '',
-                      comment: ''
-                    },
-                    {
-                      id: 3,
-                      text: 'Czy pracownicy zostali zapoznani z polityką ochrony danych osobowych?',
-                      value: '',
-                      comment: ''
-                    }
-                  ]
-                },
-                {
-                  id: 2,
-                  name: 'I.2 Wyznaczenie ADO',
-                  description: 'Wyznaczenie Administratora Danych Osobowych',
-                  score: '',
-                  comment: '',
-                  requirements: [
-                    {
-                      id: 4,
-                      text: 'Czy w jednostce nastąpiło powierzenie zadań ADO wyznaczonym podmiotom?',
-                      value: '',
-                      comment: ''
-                    },
-                    {
-                      id: 5,
-                      text: 'Czy zakres zadań ADO został jasno określony?',
-                      value: '',
-                      comment: ''
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              id: 2,
-              name: 'II. Prawo do przetwarzania DO',
-              description: 'Zapewnienie poprawności procesów przetwarzania danych osobowych',
-              areas: [
-                {
-                  id: 3,
-                  name: 'II.1 Podstawy prawne przetwarzania DO',
-                  description: 'Podstawy prawne przetwarzania danych osobowych',
-                  score: '',
-                  comment: '',
-                  requirements: [
-                    {
-                      id: 6,
-                      text: 'Czy zidentyfikowano podstawy prawne przetwarzania danych osobowych?',
-                      value: '',
-                      comment: ''
-                    }
-                  ]
-                }
-              ]
+          // Pobieranie szablonu dla nowej oceny
+          const response = await fetch('http://localhost:8080/assessments/template', {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
-          ];
-          
-          setAssessment({
-            id: 'new',
-            name: '',
-            description: '',
-            status: 'DRAFT',
-            chapters: mockChapters
           });
+          
+          if (response.ok) {
+            const templateData = await response.json();
+            setAssessment({
+              id: 'new',
+              name: '',
+              description: '',
+              status: 'DRAFT',
+              chapters: templateData.chapters || []
+            });
+          } else {
+            setError('Nie udało się pobrać szablonu oceny');
+          }
         }
       } catch (err) {
         setError('Nie udało się pobrać danych oceny');
@@ -308,40 +157,82 @@ const Assessment = () => {
   };
 
   // Funkcja eksportu oceny
-  const handleExport = () => {
-    // W rzeczywistości będzie to wywołanie do backendu
-    // const response = await assessmentService.exportAssessment(assessment.id);
-    
-    // Symulacja eksportu
-    const exportData = JSON.stringify(assessment, null, 2);
-    const blob = new Blob([exportData], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `ocena-rodo-${assessment.id}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  const handleExport = async () => {
+    try {
+      if (assessment.id === 'new') {
+        setError('Przed eksportem należy zapisać ocenę');
+        return;
+      }
+      
+      const response = await fetch(`http://localhost:8080/assessments/${assessment.id}/export`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `ocena-rodo-${assessment.id}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } else {
+        setError('Nie udało się wyeksportować oceny');
+      }
+    } catch (err) {
+      setError('Nie udało się wyeksportować oceny');
+      console.error(err);
+    }
   };
 
   const handleSave = async () => {
     try {
       setLoading(true);
       
-      // W rzeczywistości będzie to wywołanie do backendu
-      // const response = await assessmentService.saveAssessment(assessment);
+      const method = assessment.id === 'new' ? 'POST' : 'PUT';
+      const url = assessment.id === 'new' 
+        ? 'http://localhost:8080/assessments'
+        : `http://localhost:8080/assessments/${assessment.id}`;
       
-      // Symulacja zapisywania
-      setTimeout(() => {
-        setLoading(false);
+      const response = await fetch(url, {
+        method: method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(assessment)
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        
+        // Jeśli to nowa ocena, zaktualizuj ID
+        if (assessment.id === 'new' && result.id) {
+          setAssessment(prev => ({
+            ...prev,
+            id: result.id
+          }));
+          
+          // Zaktualizuj URL bez przeładowania strony
+          window.history.replaceState(null, '', `/assessment/${result.id}`);
+        }
+        
         setSaveSuccess(true);
         // Ukryj komunikat o sukcesie po 3 sekundach
         setTimeout(() => setSaveSuccess(false), 3000);
-      }, 1000);
+      } else {
+        const errorData = await response.json();
+        setError(errorData.message || 'Nie udało się zapisać oceny');
+      }
     } catch (err) {
       setError('Nie udało się zapisać oceny');
+      console.error(err);
+    } finally {
       setLoading(false);
     }
   };
