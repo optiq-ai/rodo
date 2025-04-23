@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 export const AuthContext = createContext();
 
@@ -10,83 +11,80 @@ export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Sprawdzenie, czy użytkownik jest zalogowany (z localStorage)
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
+    // Check if user is logged in (from JWT token)
+    const token = localStorage.getItem('token');
+    if (token) {
       try {
-        setCurrentUser(JSON.parse(storedUser));
+        // Set axios default headers for all requests
+        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        
+        // In a real implementation, you might want to validate the token
+        // or fetch user details from the backend
+        setCurrentUser({ token });
       } catch (e) {
-        console.error('Błąd parsowania danych użytkownika:', e);
-        localStorage.removeItem('user');
+        console.error('Error parsing user data:', e);
+        localStorage.removeItem('token');
       }
     }
     setLoading(false);
   }, []);
 
-  // Funkcja logowania
+  // Login function
   const login = async (username, password) => {
     try {
       setLoading(true);
       setError(null);
       
-      // Symulacja wywołania API - w rzeczywistości będzie to wywołanie do backendu
-      // const response = await authService.login(username, password);
+      const response = await axios.post("http://localhost:8080/login", {
+        login: username,
+        password: password.split(''),
+      });
       
-      // Tymczasowa implementacja dla szkieletu
-      const mockUser = {
-        id: 1,
-        username: username,
-        email: `${username}@example.com`,
-        roles: ['ROLE_USER']
-      };
+      const { token } = response.data;
       
-      // Zapisanie danych użytkownika w localStorage
-      localStorage.setItem('user', JSON.stringify(mockUser));
-      setCurrentUser(mockUser);
+      // Save token to localStorage
+      localStorage.setItem('token', token);
       
-      return mockUser;
+      // Set axios default headers for all requests
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      
+      setCurrentUser({ token });
+      
+      return { token };
     } catch (err) {
-      setError(err.message || 'Wystąpił błąd podczas logowania');
+      setError(err.message || 'An error occurred during login');
       throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  // Funkcja rejestracji
+  // Register function
   const register = async (username, email, password) => {
     try {
       setLoading(true);
       setError(null);
       
-      // Symulacja wywołania API - w rzeczywistości będzie to wywołanie do backendu
-      // const response = await authService.register(username, email, password);
-      
-      // Tymczasowa implementacja dla szkieletu
-      const mockUser = {
-        id: 1,
-        username: username,
-        email: email,
-        roles: ['ROLE_USER']
-      };
-      
-      return mockUser;
+      // In a real implementation, this would call the registration endpoint
+      // For now, we'll just redirect to login
+      return { success: true };
     } catch (err) {
-      setError(err.message || 'Wystąpił błąd podczas rejestracji');
+      setError(err.message || 'An error occurred during registration');
       throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  // Funkcja wylogowania
+  // Logout function
   const logout = () => {
-    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    delete axios.defaults.headers.common['Authorization'];
     setCurrentUser(null);
     navigate('/login');
   };
 
-  // Sprawdzenie, czy użytkownik ma określoną rolę
+  // Check if user has a specific role
   const hasRole = (role) => {
     return currentUser && currentUser.roles && currentUser.roles.includes(role);
   };

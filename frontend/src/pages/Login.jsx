@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Container, Form, Button, Card, Alert } from 'react-bootstrap';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import axios from 'axios';
 
 const Login = () => {
   const [username, setUsername] = useState('');
@@ -21,6 +22,7 @@ const Login = () => {
       await login(username, password);
       navigate('/dashboard');
     } catch (err) {
+      console.error("Error logging in:", err);
       setError('Nieprawidłowa nazwa użytkownika lub hasło');
     } finally {
       setLoading(false);

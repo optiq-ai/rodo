@@ -1,17 +1,17 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
 
 const PrivateRoute = ({ children }) => {
   const { currentUser, loading } = useAuth();
   const location = useLocation();
 
   if (loading) {
-    return <div>Ładowanie...</div>;
+    return <div>Loading...</div>;
   }
 
   if (!currentUser) {
-    // Przekierowanie do strony logowania z zapisaniem oryginalnej ścieżki
+    // Redirect to login page with original path saved
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 

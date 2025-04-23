@@ -1,0 +1,38 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '3.2.1'
+	id 'io.spring.dependency-management' version '1.1.4'
+}
+group = 'com.auth'
+version = '0.0.1-SNAPSHOT'
+java {
+	sourceCompatibility = '21'
+}
+repositories {
+	mavenCentral()
+}
+dependencies {
+	// Spring Boot Starter for JPA and database access
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	// PostgreSQL database driver
+	implementation 'org.postgresql:postgresql:42.6.0'
+	// Starter for unit testing
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	// Spring Boot Starter for web applications
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	// Spring Boot developer tools (automatic application reloading, etc.)
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+	// Spring Boot Starter for REST in Spring Data
+	implementation 'org.springframework.boot:spring-boot-starter-data-rest'
+	// Spring Boot Starter for security
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	// Spring Boot Starter for validation
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	// Starter for Spring security testing
+	testImplementation 'org.springframework.security:spring-security-test'
+	// JWT
+	implementation 'com.auth0:java-jwt:4.0.0'
+}
+tasks.named('test') {
+	useJUnitPlatform()
+}
