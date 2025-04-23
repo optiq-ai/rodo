@@ -10,7 +10,11 @@ export const AuthProvider = ({ children }) => {
     // Check if user is logged in based on token
     const token = localStorage.getItem('token');
     if (token) {
-      setCurrentUser({ token });
+      // Create a more complete user object with username
+      setCurrentUser({ 
+        token,
+        username: 'User' // Default username or extract from token if possible
+      });
     }
     setLoading(false);
   }, []);
@@ -48,7 +52,7 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider value={value}>
-      {children}
+      {!loading && children}
     </AuthContext.Provider>
   );
 };
