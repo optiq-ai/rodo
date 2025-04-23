@@ -5,6 +5,12 @@ import jakarta.validation.constraints.Size;
 public class UserProfileDto {
     private Long id;
     
+    @Size(max = 50, message = "Imię nie może przekraczać 50 znaków")
+    private String firstName;
+    
+    @Size(max = 50, message = "Nazwisko nie może przekraczać 50 znaków")
+    private String lastName;
+    
     @Size(max = 20, message = "Numer telefonu nie może przekraczać 20 znaków")
     private String phone;
     
@@ -22,8 +28,10 @@ public class UserProfileDto {
     }
     
     // Constructor with all fields
-    public UserProfileDto(Long id, String phone, String position, Boolean notificationEmail, Boolean notificationApp) {
+    public UserProfileDto(Long id, String firstName, String lastName, String phone, String position, Boolean notificationEmail, Boolean notificationApp) {
         this.id = id;
+        this.firstName = firstName;
+        this.lastName = lastName;
         this.phone = phone;
         this.position = position;
         this.notificationEmail = notificationEmail != null ? notificationEmail : true;
@@ -37,6 +45,22 @@ public class UserProfileDto {
     
     public void setId(Long id) {
         this.id = id;
+    }
+    
+    public String getFirstName() {
+        return firstName;
+    }
+    
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+    
+    public String getLastName() {
+        return lastName;
+    }
+    
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
     }
     
     public String getPhone() {
