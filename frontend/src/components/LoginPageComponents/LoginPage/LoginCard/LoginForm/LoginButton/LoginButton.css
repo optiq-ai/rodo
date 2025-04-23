@@ -2,17 +2,23 @@
   grid-row: 3;
   align-self: center;
   justify-self: center;
-  height: 40%;
-  width: 20%;
-  border-radius: 4px;
+  height: 40px;
+  width: 120px;
+  border-radius: 20px;
   border: none;
   background-color: var(--primary-color, #4052b5);
   color: white;
-  font-size: large;
+  font-size: 16px;
+  font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .login-button:hover {
   background-color: var(--primary-dark, #303f9f);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  transform: translateY(-1px);
 }
