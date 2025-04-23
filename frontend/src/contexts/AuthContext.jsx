@@ -44,6 +44,7 @@ export const AuthProvider = ({ children }) => {
 
   const value = {
     currentUser,
+    setCurrentUser, // Export setCurrentUser to allow direct updates
     loading,
     login,
     logout,
