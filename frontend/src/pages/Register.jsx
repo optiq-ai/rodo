@@ -82,7 +82,7 @@ const Register = () => {
       try {
         const response = await axios.post('http://localhost:8080/register', {
           userName: formData.userName,
-          password: formData.password,
+          password: formData.password, // Wysyłamy hasło jako string, zgodnie z oczekiwaniami backendu
           firstName: formData.firstName,
           lastName: formData.lastName,
           email: formData.email
@@ -101,13 +101,26 @@ const Register = () => {
         navigate('/dashboard');
       } catch (error) {
         console.error('Registration error:', error);
-        setErrorMessage(error.response?.data?.error || 'Rejestracja nie powiodła się. Spróbuj ponownie.');
+        
+        // Lepsza obsługa błędów
+        if (error.response) {
+          // Serwer zwrócił odpowiedź z kodem błędu
+          const errorMsg = error.response.data.error || error.response.data.message || 'Rejestracja nie powiodła się. Spróbuj ponownie.';
+          setErrorMessage(errorMsg);
+        } else if (error.request) {
+          // Żądanie zostało wysłane, ale nie otrzymano odpowiedzi
+          setErrorMessage('Brak odpowiedzi z serwera. Sprawdź połączenie internetowe.');
+        } else {
+          // Wystąpił błąd podczas konfigurowania żądania
+          setErrorMessage('Wystąpił błąd podczas rejestracji. Spróbuj ponownie później.');
+        }
+        
         setShowError(true);
         
-        // Hide error after 5 seconds
+        // Hide error after 8 seconds (zwiększono z 5 do 8 sekund, aby użytkownik miał więcej czasu na przeczytanie)
         setTimeout(() => {
           setShowError(false);
-        }, 5000);
+        }, 8000);
       }
     }
   };

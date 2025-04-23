@@ -10,17 +10,20 @@ import LoginFields from "./LoginFields/LoginFields";
 const LoginForm = () => {
   const [login, setLogin] = useState();
   const [password, setPassword] = useState();
+  const [error, setError] = useState("");
   const navigate = useNavigate();
   const { setCurrentUser } = useAuth();
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setError(""); // Resetujemy błąd przed próbą logowania
+    
     try {
       // Używamy userName zamiast login dla spójności z backendem
       // Zachowujemy kompatybilność z istniejącym interfejsem użytkownika
       const response = await axios.post("http://localhost:8080/login", {
         userName: login, // Zmiana nazwy pola na userName
-        password: password ? password.split('') : [], // Zachowujemy konwersję hasła na tablicę znaków
+        password: password, // Wysyłamy hasło jako string, nie jako tablicę znaków
       });
       
       console.log("Logowanie dla użytkownika:", login);
@@ -41,7 +44,19 @@ const LoginForm = () => {
       navigate("/dashboard");
     } catch (error) {
       console.error("Error logging in:", error);
-      alert("Invalid username or password");
+      
+      // Lepsza obsługa błędów
+      if (error.response) {
+        // Serwer zwrócił odpowiedź z kodem błędu
+        const errorMessage = error.response.data.message || "Nieprawidłowa nazwa użytkownika lub hasło";
+        setError(errorMessage);
+      } else if (error.request) {
+        // Żądanie zostało wysłane, ale nie otrzymano odpowiedzi
+        setError("Brak odpowiedzi z serwera. Sprawdź połączenie internetowe.");
+      } else {
+        // Wystąpił błąd podczas konfigurowania żądania
+        setError("Wystąpił błąd podczas logowania. Spróbuj ponownie później.");
+      }
     }
   };
 
@@ -54,6 +69,7 @@ const LoginForm = () => {
         password={password}
         setPassword={setPassword}
       />
+      {error && <div className="login-error-message">{error}</div>}
       <LoginButton />
     </form>
   );

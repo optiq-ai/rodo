@@ -2,7 +2,17 @@
   height: 100%;
   width: 100%;
   display: grid;
-  grid-template-rows: 15% 70% 15%;
+  grid-template-rows: 15% 60% 10% 15%;
   grid-template-columns: 100%;
   padding: 20px;
+}
+
+.login-error-message {
+  color: #d32f2f;
+  background-color: #ffebee;
+  padding: 10px;
+  border-radius: 4px;
+  text-align: center;
+  font-size: 14px;
+  margin-top: -10px;
 }
