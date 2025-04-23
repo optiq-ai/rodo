@@ -1,0 +1,16 @@
+.login-button {
+  grid-row: 3;
+  align-self: center;
+  justify-self: center;
+  height: 40%;
+  width: 20%;
+  border-radius: 5px;
+  border: none;
+  background-color: orange;
+  font-size: large;
+  cursor: pointer;
+}
+
+.login-button:hover {
+  background-color: rgb(238, 176, 60);
+}

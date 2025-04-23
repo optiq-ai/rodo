@@ -1,0 +1,5 @@
+.login-page-grid {
+  display: grid;
+  grid-template-rows: 5vh 95fr;
+  grid-template-columns: 100%;
+}

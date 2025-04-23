@@ -1,0 +1,10 @@
+.navbar-logo-item-1 {
+  grid-column-start: 1;
+  grid-column-end: 1;
+}
+
+.workflow-logo {
+  margin-left: 5px;
+  font-size: 200%;
+  color: rgb(255, 187, 0);
+}

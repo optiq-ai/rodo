@@ -1,0 +1,28 @@
+.username-login-field {
+  grid-row: 2;
+  grid-column: 1;
+  align-self: center;
+  justify-self: center;
+  margin: 2%;
+}
+
+.username-login-field input {
+  width: 100%;
+  padding: 10px;
+  border: 2px solid #835510;
+  background-color: rgb(70, 69, 69);
+  border-radius: 5px;
+  font-size: 16px;
+  box-sizing: border-box;
+  text-align: center;
+  color: rgb(223, 183, 7);
+}
+
+.username-login-field input:focus {
+  border-color: #ff9900;
+  outline: none;
+}
+
+.username-login-field input::placeholder {
+  text-align: center;
+}

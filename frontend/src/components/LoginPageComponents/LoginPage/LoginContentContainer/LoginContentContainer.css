@@ -1,0 +1,16 @@
+.login-page-content-container {
+  grid-row: 2;
+  height: 95vh;
+  width: 100%;
+  background-color: rgb(116, 116, 116);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.spectrum-background {
+  background: linear-gradient(rgb(173, 51, 51), transparent),
+    linear-gradient(to top left, rgb(99, 68, 10), transparent),
+    linear-gradient(to top right, rgb(247, 176, 45), transparent);
+  background-blend-mode: screen;
+}

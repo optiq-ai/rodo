@@ -1,0 +1,7 @@
+.login-card-header {
+  align-self: center;
+  justify-self: center;
+  color: orange;
+  font-size: xx-large;
+  grid-row: 1;
+}

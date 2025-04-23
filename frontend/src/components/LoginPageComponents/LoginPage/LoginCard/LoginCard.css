@@ -1,0 +1,22 @@
+.login-card {
+  height: 40vh;
+  width: 35%;
+  border-radius: 5%;
+  border: solid 1px;
+  border-color: orange;
+  background-color: rgb(53, 53, 53);
+  box-shadow: 0 0 10vh 1vh black;
+}
+
+.login-card-grid {
+  display: grid;
+  grid-template-rows: 15% 70% 15%;
+  grid-template-columns: 100%;
+}
+
+@media (max-width: 800px) {
+  .login-card {
+    height: 40vh;
+    width: 100%;
+  }
+}
