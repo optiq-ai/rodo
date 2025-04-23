@@ -76,6 +76,44 @@ code {
   transform: translateY(-5px);
 }
 
+/* Style dla liczników ocen */
+.counters-container {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.counter-box {
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  padding: 1.5rem 2rem;
+  min-width: 150px;
+  transition: all 0.3s ease;
+  border-bottom: 4px solid #3f51b5;
+}
+
+.counter-box:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+.counter-box h3 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #3f51b5;
+  margin-bottom: 0.5rem;
+}
+
+.counter-box small {
+  font-size: 0.9rem;
+  color: #6c757d;
+  font-weight: 500;
+}
+
 /* Style dla przycisków */
 .btn-primary {
   background-color: #3f51b5;

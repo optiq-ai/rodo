@@ -46,27 +46,32 @@ const CompactDashboard = ({ assessments, loading, onDeleteAssessment }) => {
 
   return (
     <>
-      <Row className="mb-3">
-        <Col>
-          <div className="d-flex justify-content-between align-items-center">
-            <div className="d-flex">
-              <div className="text-center me-4 fade-in" style={{animationDelay: '0.1s'}}>
-                <h3 className="mb-0">{assessments.length}</h3>
-                <small>Wszystkie oceny</small>
-              </div>
-              <div className="text-center me-4 fade-in" style={{animationDelay: '0.2s'}}>
-                <h3 className="mb-0">{assessments.filter(a => a.status === 'W TRAKCIE').length}</h3>
-                <small>Oceny w trakcie</small>
-              </div>
-              <div className="text-center fade-in" style={{animationDelay: '0.3s'}}>
-                <h3 className="mb-0">{assessments.filter(a => a.status === 'ZAKOŃCZONA').length}</h3>
-                <small>Zakończone oceny</small>
-              </div>
+      {/* Liczniki ocen wycentrowane */}
+      <Row className="mb-4">
+        <Col className="d-flex justify-content-center">
+          <div className="d-flex justify-content-center counters-container">
+            <div className="text-center counter-box fade-in" style={{animationDelay: '0.1s'}}>
+              <h3 className="mb-0">{assessments.length}</h3>
+              <small>Wszystkie oceny</small>
             </div>
-            <Button as={Link} to="/assessment" variant="primary" className="fade-in" style={{animationDelay: '0.4s'}}>
-              Nowa ocena
-            </Button>
+            <div className="text-center counter-box fade-in" style={{animationDelay: '0.2s'}}>
+              <h3 className="mb-0">{assessments.filter(a => a.status === 'W TRAKCIE').length}</h3>
+              <small>Oceny w trakcie</small>
+            </div>
+            <div className="text-center counter-box fade-in" style={{animationDelay: '0.3s'}}>
+              <h3 className="mb-0">{assessments.filter(a => a.status === 'ZAKOŃCZONA').length}</h3>
+              <small>Zakończone oceny</small>
+            </div>
           </div>
+        </Col>
+      </Row>
+      
+      {/* Przycisk "Nowa ocena" w osobnym wierszu */}
+      <Row className="mb-3">
+        <Col className="d-flex justify-content-end">
+          <Button as={Link} to="/assessment" variant="primary" className="fade-in" style={{animationDelay: '0.4s'}}>
+            Nowa ocena
+          </Button>
         </Col>
       </Row>
 
