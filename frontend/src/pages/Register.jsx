@@ -82,7 +82,7 @@ const Register = () => {
       try {
         const response = await axios.post('http://localhost:8080/register', {
           userName: formData.userName,
-          password: formData.password.split(''),
+          password: formData.password,
           firstName: formData.firstName,
           lastName: formData.lastName,
           email: formData.email

@@ -10,12 +10,12 @@ public class RegisterDto {
     @NotBlank(message = "Nazwa użytkownika jest wymagana")
     private String userName;
     
-    @jakarta.validation.constraints.NotEmpty(message = "Hasło jest wymagane")
+    @NotBlank(message = "Hasło jest wymagane")
     @Pattern(
         regexp = "^(?=.*[A-Z])(?=.*[!@#$%^&*(),.?\":{}|<>]).{8,}$",
         message = "Hasło musi zawierać co najmniej jedną wielką literę i jeden znak specjalny"
     )
-    private char[] password;
+    private String password;
     
     @NotBlank(message = "Imię jest wymagane")
     private String firstName;
@@ -49,11 +49,11 @@ public class RegisterDto {
         this.userName = userName;
     }
 
-    public char[] getPassword() {
+    public String getPassword() {
         return password;
     }
 
-    public void setPassword(char[] password) {
+    public void setPassword(String password) {
         this.password = password;
     }
 

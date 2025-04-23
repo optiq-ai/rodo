@@ -59,7 +59,7 @@ public class RegistrationController {
         }
         
         // Validate password requirements
-        if (!PASSWORD_PATTERN.matcher(String.valueOf(registerDto.getPassword())).matches()) {
+        if (!PASSWORD_PATTERN.matcher(registerDto.getPassword()).matches()) {
             response.put("error", "Hasło musi zawierać co najmniej jedną wielką literę i jeden znak specjalny");
             return ResponseEntity.badRequest().body(response);
         }
@@ -80,7 +80,7 @@ public class RegistrationController {
             // Create new employee
             Employee employee = new Employee();
             employee.setUserName(registerDto.getUserName());
-            employee.setPassword(passwordEncoder.encode(String.valueOf(registerDto.getPassword())));
+            employee.setPassword(passwordEncoder.encode(registerDto.getPassword()));
             employee.setFirstName(registerDto.getFirstName());
             employee.setLastName(registerDto.getLastName());
             employee.setEmail(registerDto.getEmail());
