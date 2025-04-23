@@ -2,6 +2,7 @@ package com.auth.jwt.data.dto.authorization;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Pattern;
 
 public class RegisterDto {
@@ -9,7 +10,7 @@ public class RegisterDto {
     @NotBlank(message = "Nazwa użytkownika jest wymagana")
     private String userName;
     
-    @NotBlank(message = "Hasło jest wymagane")
+    @jakarta.validation.constraints.NotEmpty(message = "Hasło jest wymagane")
     @Pattern(
         regexp = "^(?=.*[A-Z])(?=.*[!@#$%^&*(),.?\":{}|<>]).{8,}$",
         message = "Hasło musi zawierać co najmniej jedną wielką literę i jeden znak specjalny"

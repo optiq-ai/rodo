@@ -49,6 +49,7 @@ public class RegistrationController {
     
     @PostMapping("/register")
     public ResponseEntity<Map<String, String>> register(@Valid @RequestBody RegisterDto registerDto) {
+        System.out.println("Otrzymano żądanie rejestracji: " + registerDto.getUserName());
         Map<String, String> response = new HashMap<>();
         
         // Validate email format
