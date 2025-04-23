@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import LoginPage from './components/LoginPageComponents/LoginPage/LoginPage';
 import Dashboard from './pages/Dashboard';
+import Register from './pages/Register';
 import ProtectedRoute from './ProtectedRoute/ProtectedRoute';
 import './App.css';
 import './animations.css';
@@ -15,7 +16,6 @@ import UserSettings from './pages/UserSettings';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import { Container } from 'react-bootstrap';
-
 function App() {
   return (
     <div className="app-container d-flex flex-column min-vh-100">
@@ -23,6 +23,7 @@ function App() {
       <Container className="flex-grow-1 py-4">
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<Register />} />
           <Route path="/dashboard" element={
             <ProtectedRoute element={<Dashboard />} />
           } />
@@ -49,5 +50,4 @@ function App() {
     </div>
   );
 }
-
 export default App;
