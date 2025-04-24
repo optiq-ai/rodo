@@ -11,37 +11,29 @@ const LoginForm = () => {
   const [login, setLogin] = useState();
   const [password, setPassword] = useState();
   const navigate = useNavigate();
-  const { setCurrentUser } = useAuth();
+  const { login: authLogin } = useAuth(); // Używamy funkcji login z kontekstu uwierzytelniania
 
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      // Używamy userName zamiast login dla spójności z backendem
-      // Zachowujemy kompatybilność z istniejącym interfejsem użytkownika
-      const response = await axios.post("http://localhost:8080/login", {
-        userName: login, // Zmiana nazwy pola na userName
-        password: password ? password.split('') : [], // Zachowujemy konwersję hasła na tablicę znaków
-      });
-      
       console.log("Logowanie dla użytkownika:", login);
       
-      const { token } = response.data;
-      localStorage.setItem("token", token);
-      
-      // Update the auth context directly after successful login with actual username
-      setCurrentUser({ 
-        token,
-        username: login
+      // Używamy funkcji login z kontekstu uwierzytelniania zamiast bezpośredniego wywołania axios
+      const result = await authLogin({
+        userName: login,
+        password: password
       });
       
-      // Store username in localStorage for persistence
-      localStorage.setItem("username", login);
-      
-      // Navigate to dashboard after updating auth state
-      navigate("/dashboard");
+      if (result && result.success) {
+        // Przekierowanie do dashboardu po udanym logowaniu
+        navigate("/dashboard");
+      } else {
+        // Wyświetlenie błędu, jeśli logowanie nie powiodło się
+        alert(result?.error || "Nieprawidłowa nazwa użytkownika lub hasło");
+      }
     } catch (error) {
       console.error("Error logging in:", error);
-      alert("Invalid username or password");
+      alert("Wystąpił nieoczekiwany błąd. Spróbuj ponownie.");
     }
   };
 
