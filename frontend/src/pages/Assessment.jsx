@@ -563,8 +563,8 @@ const Assessment = () => {
             handleRequirementChange={handleRequirementChange}
             handleAreaScoreChange={handleAreaScoreChange}
             handleAreaCommentChange={handleAreaCommentChange}
-            totalAreas={currentChapter.areas.length}
-            currentAreaIndex={currentAreaIndex}
+            totalAreas={totalAreas}
+            currentAreaIndex={globalAreaIndex}
             onNextArea={handleNextArea}
             onPrevArea={handlePrevArea}
             onSave={handleSave}
