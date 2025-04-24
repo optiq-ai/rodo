@@ -135,6 +135,9 @@ export const valueMapper = {
       case 'no': return 'NIE';
       case 'partial': return 'W REALIZACJI';
       case 'na': return 'ND';
+      case 'ZGODNY': return 'TAK';
+      case 'NIEZGODNY': return 'NIE';
+      case 'CZĘŚCIOWO ZGODNY': return 'W REALIZACJI';
       default: return '';
     }
   },
@@ -156,10 +159,41 @@ export const valueMapper = {
       case 'yes': return 'COMPLETED';
       case 'no': return 'NOT_APPLICABLE';
       case 'partial': return 'IN_PROGRESS';
+      case 'ZGODNY': return 'COMPLETED';
+      case 'NIEZGODNY': return 'NOT_APPLICABLE';
+      case 'CZĘŚCIOWO ZGODNY': return 'IN_PROGRESS';
       case '': return 'NOT_STARTED';
       default: return 'NOT_STARTED';
     }
   }
+};
+
+// Funkcja do obliczania postępu oceny
+const calculateProgress = (assessment) => {
+  if (!assessment.chapters || assessment.chapters.length === 0) {
+    return 0;
+  }
+  
+  let totalRequirements = 0;
+  let answeredRequirements = 0;
+  
+  assessment.chapters.forEach(chapter => {
+    if (chapter.areas) {
+      chapter.areas.forEach(area => {
+        if (area.requirements) {
+          area.requirements.forEach(req => {
+            totalRequirements++;
+            if ((req.value && req.value !== '') || 
+                (req.status && req.status !== 'NOT_STARTED')) {
+              answeredRequirements++;
+            }
+          });
+        }
+      });
+    }
+  });
+  
+  return totalRequirements > 0 ? Math.round((answeredRequirements / totalRequirements) * 100) : 0;
 };
 
 // Funkcja do formatowania danych oceny przed wysłaniem do API
@@ -361,7 +395,12 @@ export const assessmentAPI = {
     try {
       const response = await api.put(`/assessments/${id}`, formattedData);
       console.log(`[assessmentAPI.update] Zaktualizowano ocenę o ID: ${id}`);
-      return response.data;
+      
+      // Zwróć zaktualizowane dane zamiast pobierać je ponownie
+      return {
+        success: true,
+        ...formattedData
+      };
     } catch (error) {
       console.error(`[assessmentAPI.update] Błąd aktualizacji oceny ${id}:`, error.message);
       throw error;
@@ -496,84 +535,6 @@ export const subscriptionAPI = {
       throw error;
     }
   }
-};
-
-// Serwis API dla użytkowników
-export const userAPI = {
-  getAll: async () => {
-    console.log('[userAPI.getAll] Pobieranie wszystkich użytkowników');
-    try {
-      const response = await api.get('/users');
-      console.log(`[userAPI.getAll] Pobrano ${response.data.length} użytkowników`);
-      return response.data;
-    } catch (error) {
-      console.error('[userAPI.getAll] Błąd pobierania użytkowników:', error.message);
-      throw error;
-    }
-  },
-  
-  getById: async (id) => {
-    console.log(`[userAPI.getById] Pobieranie użytkownika o ID: ${id}`);
-    try {
-      const response = await api.get(`/users/${id}`);
-      console.log(`[userAPI.getById] Pobrano użytkownika o ID: ${id}`);
-      return response.data;
-    } catch (error) {
-      console.error(`[userAPI.getById] Błąd pobierania użytkownika ${id}:`, error.message);
-      throw error;
-    }
-  },
-  
-  getCurrent: async () => {
-    console.log('[userAPI.getCurrent] Pobieranie bieżącego użytkownika');
-    try {
-      const response = await api.get('/users/current');
-      console.log('[userAPI.getCurrent] Pobrano bieżącego użytkownika');
-      return response.data;
-    } catch (error) {
-      console.error('[userAPI.getCurrent] Błąd pobierania bieżącego użytkownika:', error.message);
-      throw error;
-    }
-  }
-};
-
-// Funkcja pomocnicza do obliczania postępu oceny
-const calculateProgress = (assessment) => {
-  console.log('[calculateProgress] Obliczanie postępu oceny');
-  
-  if (!assessment.chapters || assessment.chapters.length === 0) {
-    console.log('[calculateProgress] Brak rozdziałów, postęp: 0%');
-    return 0;
-  }
-  
-  let totalRequirements = 0;
-  let completedRequirements = 0;
-  
-  assessment.chapters.forEach(chapter => {
-    if (chapter.areas) {
-      chapter.areas.forEach(area => {
-        if (area.requirements) {
-          area.requirements.forEach(requirement => {
-            totalRequirements++;
-            
-            // Sprawdzanie, czy wymaganie jest ukończone
-            const value = requirement.value;
-            const status = requirement.status;
-            
-            if ((value && value !== '') || 
-                (status && (status === 'COMPLETED' || status === 'NOT_APPLICABLE'))) {
-              completedRequirements++;
-            }
-          });
-        }
-      });
-    }
-  });
-  
-  const progress = totalRequirements > 0 ? Math.round((completedRequirements / totalRequirements) * 100) : 0;
-  console.log(`[calculateProgress] Ukończone wymagania: ${completedRequirements}/${totalRequirements}, postęp: ${progress}%`);
-  
-  return progress;
 };
 
 export default api;

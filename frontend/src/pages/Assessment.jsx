@@ -381,16 +381,10 @@ const Assessment = () => {
         // Aktualizacja istniejącej oceny
         response = await assessmentAPI.update(assessment.id, assessmentToSave);
         
-        // Pobierz zaktualizowane dane, ale zachowaj rozdziały jeśli API ich nie zwraca
+        // Użyj bezpośrednio zwróconych danych zamiast pobierać je ponownie
         if (response.success) {
-          const updatedAssessment = await assessmentAPI.getById(assessment.id);
-          
-          // Jeśli API nie zwraca rozdziałów, zachowaj obecne rozdziały
-          if (!updatedAssessment.chapters || updatedAssessment.chapters.length === 0) {
-            updatedAssessment.chapters = assessmentToSave.chapters;
-          }
-          
-          setAssessment(updatedAssessment);
+          // Zachowaj aktualny stan formularza
+          setAssessment(response);
         }
       }
       
@@ -478,7 +472,7 @@ const Assessment = () => {
   const currentArea = currentChapter.areas[currentAreaIndex];
   const totalAreas = assessment.chapters.reduce((total, chapter) => total + chapter.areas.length, 0);
   
-  // Oblicz globalny indeks obszaru (dla paska postępu)
+  // Oblicz indeks bieżącego obszaru w kontekście wszystkich obszarów
   let globalAreaIndex = 0;
   for (let i = 0; i < currentChapterIndex; i++) {
     globalAreaIndex += assessment.chapters[i].areas.length;
@@ -488,16 +482,13 @@ const Assessment = () => {
   return (
     <Container fluid className="my-4">
       <Row>
-        <Col md={12}>
+        <Col md={12} lg={9}>
           <Card className="mb-4">
             <Card.Header className="bg-primary text-white d-flex justify-content-between align-items-center">
               <h3 className="mb-0">Formularz oceny RODO</h3>
               <div>
-                <span className="badge bg-light text-dark me-2">
-                  Status: {assessment.status}
-                </span>
-                <span className="badge bg-info">
-                  Postęp: {overallProgress}%
+                <span className={`badge bg-${assessment.status === 'ZAKOŃCZONA' ? 'success' : assessment.status === 'W TRAKCIE' ? 'warning' : 'secondary'} ms-2`}>
+                  {assessment.status}
                 </span>
               </div>
             </Card.Header>
@@ -524,33 +515,43 @@ const Assessment = () => {
                   
                   <Col md={6}>
                     <Form.Group className="mb-3">
-                      <Form.Label>Opis</Form.Label>
-                      <Form.Control
-                        as="textarea"
-                        rows={1}
-                        name="description"
-                        value={assessment.description}
-                        onChange={handleInputChange}
-                        placeholder="Wprowadź opis oceny (opcjonalnie)"
-                      />
+                      <Form.Label>Status</Form.Label>
+                      <div className="form-control bg-light">
+                        {assessment.status}
+                      </div>
                     </Form.Group>
                   </Col>
                 </Row>
                 
-                <div className="d-flex justify-content-between">
-                  <Button variant="primary" onClick={handleSave} disabled={loading}>
-                    💾 Zapisz ocenę
-                  </Button>
-                  
-                  <div>
-                    <span className="me-2">Obszar {globalAreaIndex + 1} z {totalAreas}</span>
-                    <ProgressBar 
-                      now={(globalAreaIndex + 1) / totalAreas * 100} 
-                      style={{width: '200px', display: 'inline-block'}} 
-                    />
-                  </div>
-                </div>
+                <Form.Group className="mb-3">
+                  <Form.Label>Opis</Form.Label>
+                  <Form.Control
+                    as="textarea"
+                    rows={2}
+                    name="description"
+                    value={assessment.description}
+                    onChange={handleInputChange}
+                    placeholder="Wprowadź opis oceny (opcjonalnie)"
+                  />
+                </Form.Group>
               </Form>
+              
+              <div className="mb-4">
+                <div className="d-flex justify-content-between align-items-center mb-2">
+                  <h5 className="mb-0">Ogólny postęp oceny:</h5>
+                  <span className="badge bg-primary">{overallProgress}%</span>
+                </div>
+                <ProgressBar 
+                  now={overallProgress} 
+                  variant={overallProgress < 30 ? "danger" : overallProgress < 70 ? "warning" : "success"} 
+                  animated 
+                  style={{height: '15px'}}
+                />
+                <div className="d-flex justify-content-between mt-1">
+                  <small className="text-muted">Obszar {globalAreaIndex + 1} z {totalAreas}</small>
+                  <small className="text-muted">Rozdział: {currentChapter.name}</small>
+                </div>
+              </div>
               
               <div className="mb-4">
                 <h4>Rozdział: {currentChapter.name}</h4>
@@ -564,13 +565,89 @@ const Assessment = () => {
                 handleRequirementChange={handleRequirementChange}
                 handleAreaScoreChange={handleAreaScoreChange}
                 handleAreaCommentChange={handleAreaCommentChange}
-                totalAreas={totalAreas}
-                currentAreaIndex={globalAreaIndex}
+                totalAreas={currentChapter.areas.length}
+                currentAreaIndex={currentAreaIndex}
                 onNextArea={handleNextArea}
                 onPrevArea={handlePrevArea}
                 onSave={handleSave}
                 onExport={handleExport}
               />
+            </Card.Body>
+          </Card>
+        </Col>
+        
+        <Col md={12} lg={3}>
+          <Card className="mb-4 sticky-top" style={{top: '20px'}}>
+            <Card.Header className="bg-primary text-white">
+              <h5 className="mb-0">Nawigacja</h5>
+            </Card.Header>
+            <Card.Body>
+              <div className="mb-3">
+                <Button 
+                  variant="outline-primary" 
+                  className="w-100 mb-2"
+                  onClick={handleSave}
+                >
+                  💾 Zapisz ocenę
+                </Button>
+                
+                <Button 
+                  variant="outline-success" 
+                  className="w-100"
+                  onClick={handleExport}
+                >
+                  📤 Eksportuj do PDF
+                </Button>
+              </div>
+              
+              <h6 className="mb-2">Rozdziały i obszary:</h6>
+              <div className="chapters-nav">
+                {assessment.chapters.map((chapter, chIdx) => (
+                  <div key={chapter.id} className="mb-3">
+                    <div 
+                      className={`chapter-title ${currentChapterIndex === chIdx ? 'fw-bold text-primary' : ''}`}
+                      style={{cursor: 'pointer'}}
+                      onClick={() => {
+                        setCurrentChapterIndex(chIdx);
+                        setCurrentAreaIndex(0);
+                      }}
+                    >
+                      {chapter.name}
+                    </div>
+                    
+                    <ul className="list-unstyled ms-3 mt-1">
+                      {chapter.areas.map((area, areaIdx) => (
+                        <li 
+                          key={area.id} 
+                          className={`area-item ${currentChapterIndex === chIdx && currentAreaIndex === areaIdx ? 'fw-bold text-primary' : ''}`}
+                          style={{cursor: 'pointer'}}
+                          onClick={() => {
+                            setCurrentChapterIndex(chIdx);
+                            setCurrentAreaIndex(areaIdx);
+                          }}
+                        >
+                          <small>
+                            {area.name}
+                            {area.score && (
+                              <span 
+                                className={`ms-2 badge ${
+                                  area.score === 'POZYTYWNA' ? 'bg-success' : 
+                                  area.score === 'ZASTRZEŻENIA' ? 'bg-warning text-dark' : 
+                                  area.score === 'NEGATYWNA' ? 'bg-danger' : 
+                                  area.score === 'W REALIZACJI' ? 'bg-info' : 
+                                  'bg-secondary'
+                                }`}
+                              >
+                                {area.score}
+                              </span>
+                            )}
+                          </small>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
             </Card.Body>
           </Card>
         </Col>
