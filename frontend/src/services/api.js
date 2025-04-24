@@ -53,6 +53,24 @@ export const authAPI = {
         error: error.response?.data?.message || 'Błąd rejestracji'
       };
     }
+  },
+  
+  // Poprawiona funkcja weryfikacji tokenu z prawidłową ścieżką
+  verifyToken: async () => {
+    try {
+      const response = await api.get('/verify-token');
+      return {
+        valid: true,
+        username: response.data.username,
+        email: response.data.email,
+        role: response.data.role
+      };
+    } catch (error) {
+      return {
+        valid: false,
+        error: error.response?.data?.message || 'Nieprawidłowy token'
+      };
+    }
   }
 };
 

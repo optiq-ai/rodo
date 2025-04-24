@@ -36,17 +36,159 @@ const Assessment = () => {
         } else {
           // Pobieranie szablonu oceny z API
           const template = await assessmentAPI.getTemplate();
-          setAssessment({
-            id: 'new',
-            name: '',
-            description: '',
-            status: 'DRAFT',
-            chapters: template.chapters || []
-          });
+          
+          // Jeśli API nie zwraca rozdziałów, użyj danych mockowych
+          if (!template.chapters || template.chapters.length === 0) {
+            console.warn('API nie zwróciło rozdziałów, używam danych mockowych');
+            
+            // Mockowe dane dla rozdziałów
+            const mockChapters = [
+              {
+                id: 1,
+                name: 'I. Organizacja systemu ochrony DO',
+                description: 'Planowanie i organizacja systemu ochrony danych osobowych',
+                areas: [
+                  {
+                    id: 1,
+                    name: 'I.1 Polityka w zakresie ochrony DO',
+                    description: 'Polityka i procedury przetwarzania danych osobowych',
+                    score: '',
+                    comment: '',
+                    requirements: [
+                      {
+                        id: 1,
+                        text: 'Czy opracowano i wdrożono politykę ochrony danych osobowych?',
+                        value: '',
+                        comment: ''
+                      },
+                      {
+                        id: 2,
+                        text: 'Czy polityka ochrony danych osobowych jest aktualna i zgodna z RODO?',
+                        value: '',
+                        comment: ''
+                      },
+                      {
+                        id: 3,
+                        text: 'Czy pracownicy zostali zapoznani z polityką ochrony danych osobowych?',
+                        value: '',
+                        comment: ''
+                      }
+                    ]
+                  },
+                  {
+                    id: 2,
+                    name: 'I.2 Wyznaczenie ADO',
+                    description: 'Wyznaczenie Administratora Danych Osobowych',
+                    score: '',
+                    comment: '',
+                    requirements: [
+                      {
+                        id: 4,
+                        text: 'Czy w jednostce nastąpiło powierzenie zadań ADO wyznaczonym podmiotom?',
+                        value: '',
+                        comment: ''
+                      },
+                      {
+                        id: 5,
+                        text: 'Czy zakres zadań ADO został jasno określony?',
+                        value: '',
+                        comment: ''
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                id: 2,
+                name: 'II. Prawo do przetwarzania DO',
+                description: 'Zapewnienie poprawności procesów przetwarzania danych osobowych',
+                areas: [
+                  {
+                    id: 3,
+                    name: 'II.1 Podstawy prawne przetwarzania DO',
+                    description: 'Podstawy prawne przetwarzania danych osobowych',
+                    score: '',
+                    comment: '',
+                    requirements: [
+                      {
+                        id: 6,
+                        text: 'Czy zidentyfikowano podstawy prawne przetwarzania danych osobowych?',
+                        value: '',
+                        comment: ''
+                      }
+                    ]
+                  }
+                ]
+              }
+            ];
+            
+            setAssessment({
+              id: 'new',
+              name: '',
+              description: '',
+              status: 'DRAFT',
+              chapters: mockChapters
+            });
+          } else {
+            // Użyj danych z API
+            setAssessment({
+              id: 'new',
+              name: '',
+              description: '',
+              status: 'DRAFT',
+              chapters: template.chapters
+            });
+          }
         }
       } catch (err) {
+        console.error('Błąd podczas pobierania danych oceny:', err);
         setError('Nie udało się pobrać danych oceny: ' + (err.response?.data?.message || err.message));
-        console.error(err);
+        
+        // W przypadku błędu, użyj danych mockowych
+        const mockChapters = [
+          {
+            id: 1,
+            name: 'I. Organizacja systemu ochrony DO',
+            description: 'Planowanie i organizacja systemu ochrony danych osobowych',
+            areas: [
+              {
+                id: 1,
+                name: 'I.1 Polityka w zakresie ochrony DO',
+                description: 'Polityka i procedury przetwarzania danych osobowych',
+                score: '',
+                comment: '',
+                requirements: [
+                  {
+                    id: 1,
+                    text: 'Czy opracowano i wdrożono politykę ochrony danych osobowych?',
+                    value: '',
+                    comment: ''
+                  },
+                  {
+                    id: 2,
+                    text: 'Czy polityka ochrony danych osobowych jest aktualna i zgodna z RODO?',
+                    value: '',
+                    comment: ''
+                  },
+                  {
+                    id: 3,
+                    text: 'Czy pracownicy zostali zapoznani z polityką ochrony danych osobowych?',
+                    value: '',
+                    comment: ''
+                  }
+                ]
+              }
+            ]
+          }
+        ];
+        
+        setAssessment({
+          id: 'new',
+          name: '',
+          description: '',
+          status: 'DRAFT',
+          chapters: mockChapters
+        });
       } finally {
         setLoading(false);
       }
@@ -208,6 +350,12 @@ const Assessment = () => {
     );
   }
 
+  // Sprawdź, czy mamy rozdziały i obszary
+  const hasChaptersAndAreas = assessment.chapters && 
+                             assessment.chapters.length > 0 && 
+                             assessment.chapters[0].areas && 
+                             assessment.chapters[0].areas.length > 0;
+
   return (
     <Container className="my-4">
       <Row className="mb-4">
@@ -247,13 +395,18 @@ const Assessment = () => {
                     className="comment-animated"
                   />
                 </Form.Group>
+                <div className="d-flex justify-content-end">
+                  <Button variant="primary" onClick={handleSave}>
+                    Zapisz ocenę
+                  </Button>
+                </div>
               </Form>
             </Card.Body>
           </Card>
         </Col>
       </Row>
 
-      {assessment.chapters.length > 0 && (
+      {hasChaptersAndAreas ? (
         <>
           <Row className="mb-4">
             <Col>
@@ -291,6 +444,14 @@ const Assessment = () => {
             </Col>
           </Row>
         </>
+      ) : (
+        <Row>
+          <Col>
+            <Alert variant="info">
+              Brak rozdziałów lub obszarów do wyświetlenia. Zapisz podstawowe informacje o ocenie, aby kontynuować.
+            </Alert>
+          </Col>
+        </Row>
       )}
     </Container>
   );
