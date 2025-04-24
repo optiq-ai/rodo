@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import { useAuth } from '../hooks/useAuth';
 import './Register.css';
 
@@ -19,7 +18,7 @@ const Register = () => {
   const [errorMessage, setErrorMessage] = useState('');
   
   const navigate = useNavigate();
-  const { setCurrentUser } = useAuth();
+  const { register: registerUser } = useAuth();
 
   const validateEmail = (email) => {
     const re = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -80,25 +79,24 @@ const Register = () => {
     
     if (validateForm()) {
       try {
-        const response = await axios.post('http://localhost:8080/register', {
+        const userData = {
           userName: formData.userName,
           password: formData.password,
           firstName: formData.firstName,
           lastName: formData.lastName,
           email: formData.email
-        });
+        };
         
-        // Store token in localStorage
-        localStorage.setItem('token', response.data.token);
+        // Use the register function from AuthContext
+        const result = await registerUser(userData);
         
-        // Update auth context
-        setCurrentUser({
-          token: response.data.token,
-          username: formData.userName
-        });
-        
-        // Redirect to dashboard
-        navigate('/dashboard');
+        if (result.success) {
+          // Redirect to dashboard
+          navigate('/dashboard');
+        } else {
+          setErrorMessage(result.error || 'Rejestracja nie powiodła się. Spróbuj ponownie.');
+          setShowError(true);
+        }
       } catch (error) {
         console.error('Registration error:', error);
         setErrorMessage(error.response?.data?.error || 'Rejestracja nie powiodła się. Spróbuj ponownie.');
