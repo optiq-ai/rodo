@@ -466,7 +466,6 @@ public class AssessmentController {
                 chapterData.put("id", chapter.getId());
                 chapterData.put("name", chapter.getName());
                 chapterData.put("description", chapter.getDescription());
-                chapterData.put("order", chapter.getOrder());
                 
                 List<Map<String, Object>> areasData = new ArrayList<>();
                 if (chapter.getAreas() != null) {
@@ -475,18 +474,16 @@ public class AssessmentController {
                         areaData.put("id", area.getId());
                         areaData.put("name", area.getName());
                         areaData.put("description", area.getDescription());
-                        areaData.put("order", area.getOrder());
                         areaData.put("score", area.getScore());
+                        areaData.put("comment", area.getComment());
                         
                         List<Map<String, Object>> requirementsData = new ArrayList<>();
                         if (area.getRequirements() != null) {
                             for (Requirement requirement : area.getRequirements()) {
                                 Map<String, Object> requirementData = new HashMap<>();
                                 requirementData.put("id", requirement.getId());
-                                requirementData.put("name", requirement.getName());
-                                requirementData.put("description", requirement.getDescription());
-                                requirementData.put("order", requirement.getOrder());
-                                requirementData.put("status", requirement.getStatus());
+                                requirementData.put("text", requirement.getText());
+                                requirementData.put("value", requirement.getValue());
                                 requirementData.put("comment", requirement.getComment());
                                 
                                 requirementsData.add(requirementData);
