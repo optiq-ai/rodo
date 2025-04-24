@@ -3,6 +3,7 @@ import { Container, Row, Col, Card, Form, Button, Alert, Tab, Nav, ProgressBar }
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import RadioButtonAssessmentForm from '../components/assessment/RadioButtonAssessmentForm';
+import { assessmentAPI } from '../services/api';
 
 const Assessment = () => {
   const { id } = useParams();
@@ -29,193 +30,22 @@ const Assessment = () => {
         setLoading(true);
         
         if (id && id !== 'new') {
-          // W rzeczywistości będzie to wywołanie do backendu
-          // const response = await assessmentService.getAssessment(id);
-          
-          // Tymczasowe dane dla szkieletu
-          const mockChapters = [
-            {
-              id: 1,
-              name: 'I. Organizacja systemu ochrony DO',
-              description: 'Planowanie i organizacja systemu ochrony danych osobowych',
-              areas: [
-                {
-                  id: 1,
-                  name: 'I.1 Polityka w zakresie ochrony DO',
-                  description: 'Polityka i procedury przetwarzania danych osobowych',
-                  score: 'POZYTYWNA',
-                  comment: '',
-                  requirements: [
-                    {
-                      id: 1,
-                      text: 'Czy opracowano i wdrożono politykę ochrony danych osobowych?',
-                      value: 'TAK',
-                      comment: ''
-                    },
-                    {
-                      id: 2,
-                      text: 'Czy polityka ochrony danych osobowych jest aktualna i zgodna z RODO?',
-                      value: 'TAK',
-                      comment: ''
-                    },
-                    {
-                      id: 3,
-                      text: 'Czy pracownicy zostali zapoznani z polityką ochrony danych osobowych?',
-                      value: 'TAK',
-                      comment: ''
-                    }
-                  ]
-                },
-                {
-                  id: 2,
-                  name: 'I.2 Wyznaczenie ADO',
-                  description: 'Wyznaczenie Administratora Danych Osobowych',
-                  score: 'ZASTRZEŻENIA',
-                  comment: 'Należy zaktualizować dokumentację',
-                  requirements: [
-                    {
-                      id: 4,
-                      text: 'Czy w jednostce nastąpiło powierzenie zadań ADO wyznaczonym podmiotom?',
-                      value: 'TAK',
-                      comment: ''
-                    },
-                    {
-                      id: 5,
-                      text: 'Czy zakres zadań ADO został jasno określony?',
-                      value: 'NIE',
-                      comment: 'Brak formalnego dokumentu określającego zakres zadań'
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              id: 2,
-              name: 'II. Prawo do przetwarzania DO',
-              description: 'Zapewnienie poprawności procesów przetwarzania danych osobowych',
-              areas: [
-                {
-                  id: 3,
-                  name: 'II.1 Podstawy prawne przetwarzania DO',
-                  description: 'Podstawy prawne przetwarzania danych osobowych',
-                  score: 'W REALIZACJI',
-                  comment: 'Trwa weryfikacja podstaw prawnych',
-                  requirements: [
-                    {
-                      id: 6,
-                      text: 'Czy zidentyfikowano podstawy prawne przetwarzania danych osobowych?',
-                      value: 'W REALIZACJI',
-                      comment: 'Trwa proces identyfikacji'
-                    }
-                  ]
-                }
-              ]
-            }
-          ];
-          
-          setAssessment({
-            id: id,
-            name: 'Ocena RODO - Dział IT',
-            description: 'Ocena zgodności z RODO dla działu IT',
-            status: 'W TRAKCIE',
-            chapters: mockChapters
-          });
+          // Pobieranie istniejącej oceny z API
+          const data = await assessmentAPI.getById(id);
+          setAssessment(data);
         } else {
-          // Pobieranie struktury formularza dla nowej oceny
-          // W rzeczywistości będzie to wywołanie do backendu
-          // const response = await assessmentService.getAssessmentTemplate();
-          
-          // Tymczasowe dane dla szkieletu
-          const mockChapters = [
-            {
-              id: 1,
-              name: 'I. Organizacja systemu ochrony DO',
-              description: 'Planowanie i organizacja systemu ochrony danych osobowych',
-              areas: [
-                {
-                  id: 1,
-                  name: 'I.1 Polityka w zakresie ochrony DO',
-                  description: 'Polityka i procedury przetwarzania danych osobowych',
-                  score: '',
-                  comment: '',
-                  requirements: [
-                    {
-                      id: 1,
-                      text: 'Czy opracowano i wdrożono politykę ochrony danych osobowych?',
-                      value: '',
-                      comment: ''
-                    },
-                    {
-                      id: 2,
-                      text: 'Czy polityka ochrony danych osobowych jest aktualna i zgodna z RODO?',
-                      value: '',
-                      comment: ''
-                    },
-                    {
-                      id: 3,
-                      text: 'Czy pracownicy zostali zapoznani z polityką ochrony danych osobowych?',
-                      value: '',
-                      comment: ''
-                    }
-                  ]
-                },
-                {
-                  id: 2,
-                  name: 'I.2 Wyznaczenie ADO',
-                  description: 'Wyznaczenie Administratora Danych Osobowych',
-                  score: '',
-                  comment: '',
-                  requirements: [
-                    {
-                      id: 4,
-                      text: 'Czy w jednostce nastąpiło powierzenie zadań ADO wyznaczonym podmiotom?',
-                      value: '',
-                      comment: ''
-                    },
-                    {
-                      id: 5,
-                      text: 'Czy zakres zadań ADO został jasno określony?',
-                      value: '',
-                      comment: ''
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              id: 2,
-              name: 'II. Prawo do przetwarzania DO',
-              description: 'Zapewnienie poprawności procesów przetwarzania danych osobowych',
-              areas: [
-                {
-                  id: 3,
-                  name: 'II.1 Podstawy prawne przetwarzania DO',
-                  description: 'Podstawy prawne przetwarzania danych osobowych',
-                  score: '',
-                  comment: '',
-                  requirements: [
-                    {
-                      id: 6,
-                      text: 'Czy zidentyfikowano podstawy prawne przetwarzania danych osobowych?',
-                      value: '',
-                      comment: ''
-                    }
-                  ]
-                }
-              ]
-            }
-          ];
-          
+          // Pobieranie szablonu oceny z API
+          const template = await assessmentAPI.getTemplate();
           setAssessment({
             id: 'new',
             name: '',
             description: '',
             status: 'DRAFT',
-            chapters: mockChapters
+            chapters: template.chapters || []
           });
         }
       } catch (err) {
-        setError('Nie udało się pobrać danych oceny');
+        setError('Nie udało się pobrać danych oceny: ' + (err.response?.data?.message || err.message));
         console.error(err);
       } finally {
         setLoading(false);
@@ -308,40 +138,59 @@ const Assessment = () => {
   };
 
   // Funkcja eksportu oceny
-  const handleExport = () => {
-    // W rzeczywistości będzie to wywołanie do backendu
-    // const response = await assessmentService.exportAssessment(assessment.id);
-    
-    // Symulacja eksportu
-    const exportData = JSON.stringify(assessment, null, 2);
-    const blob = new Blob([exportData], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `ocena-rodo-${assessment.id}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  const handleExport = async () => {
+    try {
+      setLoading(true);
+      const blob = await assessmentAPI.exportAssessment(assessment.id);
+      
+      // Tworzenie URL dla pobranego pliku
+      const url = URL.createObjectURL(blob);
+      
+      // Tworzenie linku do pobrania pliku
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ocena-rodo-${assessment.id}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      setLoading(false);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (err) {
+      setError('Nie udało się wyeksportować oceny: ' + (err.response?.data?.message || err.message));
+      setLoading(false);
+    }
   };
 
   const handleSave = async () => {
     try {
       setLoading(true);
       
-      // W rzeczywistości będzie to wywołanie do backendu
-      // const response = await assessmentService.saveAssessment(assessment);
+      let response;
+      if (assessment.id === 'new') {
+        // Tworzenie nowej oceny
+        response = await assessmentAPI.create(assessment);
+        // Aktualizacja ID oceny po utworzeniu
+        if (response.id) {
+          setAssessment(prev => ({
+            ...prev,
+            id: response.id
+          }));
+          // Przekierowanie do edycji nowo utworzonej oceny
+          navigate(`/assessment/${response.id}`);
+        }
+      } else {
+        // Aktualizacja istniejącej oceny
+        response = await assessmentAPI.update(assessment.id, assessment);
+      }
       
-      // Symulacja zapisywania
-      setTimeout(() => {
-        setLoading(false);
-        setSaveSuccess(true);
-        // Ukryj komunikat o sukcesie po 3 sekundach
-        setTimeout(() => setSaveSuccess(false), 3000);
-      }, 1000);
+      setLoading(false);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err) {
-      setError('Nie udało się zapisać oceny');
+      setError('Nie udało się zapisać oceny: ' + (err.response?.data?.message || err.message));
       setLoading(false);
     }
   };
@@ -350,7 +199,10 @@ const Assessment = () => {
     return (
       <Container className="my-4">
         <div className="text-center">
-          <p>Ładowanie formularza oceny...</p>
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Ładowanie...</span>
+          </div>
+          <p className="mt-3">Ładowanie formularza oceny...</p>
         </div>
       </Container>
     );

@@ -1,14 +1,8 @@
 import axios from 'axios';
 
-// Base URL for API requests
-const API_URL = 'http://localhost:8080';
-
-// Create axios instance
+// Tworzenie instancji axios z bazowym URL
 const api = axios.create({
-  baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  baseURL: 'http://localhost:8080'
 });
 
 // Add token to URL as a parameter for all requests
@@ -27,253 +21,247 @@ api.interceptors.request.use(
   }
 );
 
-// Authentication API
+// Serwis API dla uwierzytelniania
 export const authAPI = {
   login: async (credentials) => {
     try {
       const response = await api.post('/login', credentials);
-      return response.data;
+      return {
+        success: true,
+        token: response.data.token,
+        username: credentials.userName
+      };
     } catch (error) {
-      throw error;
+      return {
+        success: false,
+        error: error.response?.data?.message || 'Błąd logowania'
+      };
     }
   },
   
   register: async (userData) => {
     try {
       const response = await api.post('/register', userData);
-      return response.data;
+      return {
+        success: true,
+        token: response.data.token,
+        username: userData.userName
+      };
     } catch (error) {
-      throw error;
-    }
-  },
-  
-  verifyToken: async () => {
-    try {
-      const response = await api.get('/verify-token');
-      return response.data;
-    } catch (error) {
-      throw error;
+      return {
+        success: false,
+        error: error.response?.data?.message || 'Błąd rejestracji'
+      };
     }
   }
 };
 
-// User API
-export const userAPI = {
-  getProfile: async () => {
-    try {
-      const response = await api.get('/users/profile');
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-  
-  updateProfile: async (profileData) => {
-    try {
-      const response = await api.put('/users/profile', profileData);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-  
-  changePassword: async (passwordData) => {
-    try {
-      const response = await api.put('/users/password', passwordData);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-  
-  getCompany: async () => {
-    try {
-      const response = await api.get('/users/company');
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-  
-  updateCompany: async (companyData) => {
-    try {
-      const response = await api.put('/users/company', companyData);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  }
-};
-
-// Assessment API
+// Serwis API dla ocen
 export const assessmentAPI = {
-  getAll: async (page = 1, size = 20) => {
+  // Pobieranie wszystkich ocen użytkownika
+  getAll: async () => {
     try {
-      const response = await api.get(`/assessments?page=${page}&size=${size}`);
+      const response = await api.get('/assessments');
       return response.data;
     } catch (error) {
+      console.error('Błąd podczas pobierania ocen:', error);
       throw error;
     }
   },
   
+  // Pobieranie podsumowania ocen
   getSummary: async () => {
     try {
       const response = await api.get('/assessments/summary');
       return response.data;
     } catch (error) {
+      console.error('Błąd podczas pobierania podsumowania ocen:', error);
       throw error;
     }
   },
   
+  // Pobieranie oceny po ID
   getById: async (id) => {
     try {
       const response = await api.get(`/assessments/${id}`);
       return response.data;
     } catch (error) {
+      console.error(`Błąd podczas pobierania oceny o ID ${id}:`, error);
       throw error;
     }
   },
   
-  create: async (assessmentData) => {
-    try {
-      const response = await api.post('/assessments', assessmentData);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-  
-  update: async (id, assessmentData) => {
-    try {
-      const response = await api.put(`/assessments/${id}`, assessmentData);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-  
-  delete: async (id) => {
-    try {
-      const response = await api.delete(`/assessments/${id}`);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-  
-  getChapters: async (id) => {
-    try {
-      const response = await api.get(`/assessments/${id}/chapters`);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-  
-  addChapter: async (id, chapterData) => {
-    try {
-      const response = await api.post(`/assessments/${id}/chapters`, chapterData);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-  
+  // Pobieranie szablonu oceny
   getTemplate: async () => {
     try {
       const response = await api.get('/assessments/template');
       return response.data;
     } catch (error) {
+      console.error('Błąd podczas pobierania szablonu oceny:', error);
       throw error;
     }
   },
   
-  exportAssessment: async (id) => {
+  // Tworzenie nowej oceny
+  create: async (assessmentData) => {
     try {
-      const response = await api.get(`/assessments/${id}/export`);
+      const response = await api.post('/assessments', assessmentData);
       return response.data;
     } catch (error) {
+      console.error('Błąd podczas tworzenia oceny:', error);
+      throw error;
+    }
+  },
+  
+  // Aktualizacja istniejącej oceny
+  update: async (id, assessmentData) => {
+    try {
+      const response = await api.put(`/assessments/${id}`, assessmentData);
+      return response.data;
+    } catch (error) {
+      console.error(`Błąd podczas aktualizacji oceny o ID ${id}:`, error);
+      throw error;
+    }
+  },
+  
+  // Usuwanie oceny
+  delete: async (id) => {
+    try {
+      const response = await api.delete(`/assessments/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Błąd podczas usuwania oceny o ID ${id}:`, error);
+      throw error;
+    }
+  },
+  
+  // Eksport oceny do PDF
+  exportAssessment: async (id) => {
+    try {
+      const response = await api.get(`/assessments/${id}/export`, {
+        responseType: 'blob'
+      });
+      return response.data;
+    } catch (error) {
+      console.error(`Błąd podczas eksportu oceny o ID ${id}:`, error);
       throw error;
     }
   }
 };
 
-// Report API
+// Serwis API dla raportów
 export const reportAPI = {
+  // Pobieranie wszystkich raportów
   getAll: async (filters = {}) => {
     try {
-      let url = '/reports';
-      const queryParams = [];
-      
-      if (filters.dateRange) queryParams.push(`dateRange=${filters.dateRange}`);
-      if (filters.riskCategory) queryParams.push(`riskCategory=${filters.riskCategory}`);
-      if (filters.riskLevel) queryParams.push(`riskLevel=${filters.riskLevel}`);
-      if (filters.sortBy) queryParams.push(`sortBy=${filters.sortBy}`);
-      
-      if (queryParams.length > 0) {
-        url += `?${queryParams.join('&')}`;
-      }
-      
-      const response = await api.get(url);
+      const response = await api.get('/reports', { params: filters });
       return response.data;
     } catch (error) {
+      console.error('Błąd podczas pobierania raportów:', error);
       throw error;
     }
   },
   
+  // Pobieranie raportu po ID
+  getById: async (id) => {
+    try {
+      const response = await api.get(`/reports/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Błąd podczas pobierania raportu o ID ${id}:`, error);
+      throw error;
+    }
+  },
+  
+  // Pobieranie szczegółów obszaru
   getAreaById: async (id) => {
     try {
       const response = await api.get(`/reports/areas/${id}`);
       return response.data;
     } catch (error) {
+      console.error(`Błąd podczas pobierania obszaru o ID ${id}:`, error);
       throw error;
     }
   },
   
-  exportReport: async (format) => {
+  // Generowanie raportu z oceny
+  generateFromAssessment: async (assessmentId, reportData) => {
     try {
-      const response = await api.get(`/reports/export?format=${format}`);
+      const response = await api.post(`/reports/generate/${assessmentId}`, reportData);
       return response.data;
     } catch (error) {
+      console.error(`Błąd podczas generowania raportu z oceny o ID ${assessmentId}:`, error);
+      throw error;
+    }
+  },
+  
+  // Eksport raportu do PDF
+  exportReport: async (id) => {
+    try {
+      const response = await api.get(`/reports/${id}/export`, {
+        responseType: 'blob'
+      });
+      return response.data;
+    } catch (error) {
+      console.error(`Błąd podczas eksportu raportu o ID ${id}:`, error);
       throw error;
     }
   }
 };
 
-// Subscription API
-export const subscriptionAPI = {
-  getSubscription: async () => {
+// Serwis API dla firm
+export const companyAPI = {
+  // Pobieranie wszystkich firm
+  getAll: async () => {
     try {
-      const response = await api.get('/subscriptions');
+      const response = await api.get('/companies');
       return response.data;
     } catch (error) {
+      console.error('Błąd podczas pobierania firm:', error);
       throw error;
     }
   },
   
-  changePlan: async (planData) => {
+  // Pobieranie firmy po ID
+  getById: async (id) => {
     try {
-      const response = await api.put('/subscriptions/plan', planData);
+      const response = await api.get(`/companies/${id}`);
       return response.data;
     } catch (error) {
+      console.error(`Błąd podczas pobierania firmy o ID ${id}:`, error);
       throw error;
     }
   },
   
-  cancelSubscription: async () => {
+  // Tworzenie nowej firmy
+  create: async (companyData) => {
     try {
-      const response = await api.put('/subscriptions/cancel');
+      const response = await api.post('/companies', companyData);
       return response.data;
     } catch (error) {
+      console.error('Błąd podczas tworzenia firmy:', error);
       throw error;
     }
   },
   
-  getPlans: async () => {
+  // Aktualizacja istniejącej firmy
+  update: async (id, companyData) => {
     try {
-      const response = await api.get('/subscriptions/plans');
+      const response = await api.put(`/companies/${id}`, companyData);
       return response.data;
     } catch (error) {
+      console.error(`Błąd podczas aktualizacji firmy o ID ${id}:`, error);
+      throw error;
+    }
+  },
+  
+  // Usuwanie firmy
+  delete: async (id) => {
+    try {
+      const response = await api.delete(`/companies/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Błąd podczas usuwania firmy o ID ${id}:`, error);
       throw error;
     }
   }
