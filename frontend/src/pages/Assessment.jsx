@@ -45,7 +45,9 @@ const Assessment = () => {
               chapters: mockChapters
             });
           } else {
-            setAssessment(data);
+            // Upewnij się, że wszystkie wymagania mają zarówno pole value jak i status
+            const processedData = processAssessmentData(data);
+            setAssessment(processedData);
           }
           
           // Oblicz postęp po załadowaniu danych
@@ -103,6 +105,38 @@ const Assessment = () => {
     fetchData();
   }, [id]);
 
+  // Funkcja do przetwarzania danych oceny, aby zapewnić spójność pól value i status
+  const processAssessmentData = (data) => {
+    if (!data.chapters) return data;
+    
+    const processedData = { ...data };
+    
+    processedData.chapters.forEach(chapter => {
+      if (chapter.areas) {
+        chapter.areas.forEach(area => {
+          if (area.requirements) {
+            area.requirements.forEach(req => {
+              // Jeśli wymaganie ma wartość, ale nie ma statusu, dodaj status
+              if (req.value && !req.status) {
+                req.status = req.value === 'yes' ? 'COMPLETED' : 
+                             req.value === 'no' ? 'NOT_APPLICABLE' : 
+                             req.value === 'partial' ? 'IN_PROGRESS' : 'NOT_STARTED';
+              }
+              // Jeśli wymaganie ma status, ale nie ma wartości, dodaj wartość
+              if (req.status && !req.value) {
+                req.value = req.status === 'COMPLETED' ? 'yes' : 
+                           req.status === 'NOT_APPLICABLE' ? 'no' : 
+                           req.status === 'IN_PROGRESS' ? 'partial' : '';
+              }
+            });
+          }
+        });
+      }
+    });
+    
+    return processedData;
+  };
+
   // Funkcja zwracająca mockowe dane rozdziałów
   const getMockChapters = () => {
     return [
@@ -122,18 +156,21 @@ const Assessment = () => {
                 id: 1,
                 text: 'Czy opracowano i wdrożono politykę ochrony danych osobowych?',
                 value: '',
+                status: 'NOT_STARTED',
                 comment: ''
               },
               {
                 id: 2,
                 text: 'Czy polityka ochrony danych osobowych jest aktualna i zgodna z RODO?',
                 value: '',
+                status: 'NOT_STARTED',
                 comment: ''
               },
               {
                 id: 3,
                 text: 'Czy pracownicy zostali zapoznani z polityką ochrony danych osobowych?',
                 value: '',
+                status: 'NOT_STARTED',
                 comment: ''
               }
             ]
@@ -149,12 +186,14 @@ const Assessment = () => {
                 id: 4,
                 text: 'Czy w jednostce nastąpiło powierzenie zadań ADO wyznaczonym podmiotom?',
                 value: '',
+                status: 'NOT_STARTED',
                 comment: ''
               },
               {
                 id: 5,
                 text: 'Czy zakres zadań ADO został jasno określony?',
                 value: '',
+                status: 'NOT_STARTED',
                 comment: ''
               }
             ]
@@ -177,6 +216,7 @@ const Assessment = () => {
                 id: 6,
                 text: 'Czy zidentyfikowano podstawy prawne przetwarzania danych osobowych?',
                 value: '',
+                status: 'NOT_STARTED',
                 comment: ''
               }
             ]
@@ -197,6 +237,23 @@ const Assessment = () => {
   const handleRequirementChange = (chapterIndex, areaIndex, requirementIndex, field, value) => {
     const updatedChapters = [...assessment.chapters];
     updatedChapters[chapterIndex].areas[areaIndex].requirements[requirementIndex][field] = value;
+    
+    // Jeśli zmieniamy wartość (value), zaktualizuj również status
+    if (field === 'value') {
+      const status = value === 'yes' ? 'COMPLETED' : 
+                    value === 'no' ? 'NOT_APPLICABLE' : 
+                    value === 'partial' ? 'IN_PROGRESS' : 'NOT_STARTED';
+      updatedChapters[chapterIndex].areas[areaIndex].requirements[requirementIndex].status = status;
+    }
+    
+    // Jeśli zmieniamy status, zaktualizuj również wartość
+    if (field === 'status') {
+      const valueFromStatus = value === 'COMPLETED' ? 'yes' : 
+                             value === 'NOT_APPLICABLE' ? 'no' : 
+                             value === 'IN_PROGRESS' ? 'partial' : '';
+      updatedChapters[chapterIndex].areas[areaIndex].requirements[requirementIndex].value = valueFromStatus;
+    }
+    
     setAssessment(prev => ({
       ...prev,
       chapters: updatedChapters
@@ -257,14 +314,20 @@ const Assessment = () => {
     let answeredRequirements = 0;
 
     assessment.chapters.forEach(chapter => {
-      chapter.areas.forEach(area => {
-        area.requirements.forEach(req => {
-          totalRequirements++;
-          if (req.value && req.value !== '') {
-            answeredRequirements++;
+      if (chapter.areas) {
+        chapter.areas.forEach(area => {
+          if (area.requirements) {
+            area.requirements.forEach(req => {
+              totalRequirements++;
+              // Sprawdź zarówno pole value jak i status
+              if ((req.value && req.value !== '') || 
+                  (req.status && req.status !== 'NOT_STARTED')) {
+                answeredRequirements++;
+              }
+            });
           }
         });
-      });
+      }
     });
 
     const progress = totalRequirements > 0 ? Math.round((answeredRequirements / totalRequirements) * 100) : 0;
@@ -330,6 +393,8 @@ const Assessment = () => {
         progress: currentProgress
       };
       
+      console.log('Zapisywanie oceny:', JSON.stringify(assessmentToSave, null, 2));
+      
       let response;
       if (assessment.id === 'new') {
         // Tworzenie nowej oceny
@@ -342,6 +407,10 @@ const Assessment = () => {
           // Jeśli API nie zwraca rozdziałów, zachowaj obecne rozdziały
           if (!savedAssessment.chapters || savedAssessment.chapters.length === 0) {
             savedAssessment.chapters = assessment.chapters;
+          } else {
+            // Przetwórz dane, aby zapewnić spójność pól value i status
+            const processedData = processAssessmentData(savedAssessment);
+            savedAssessment.chapters = processedData.chapters;
           }
           
           setAssessment(savedAssessment);
@@ -360,6 +429,10 @@ const Assessment = () => {
           // Jeśli API nie zwraca rozdziałów, zachowaj obecne rozdziały
           if (!updatedAssessment.chapters || updatedAssessment.chapters.length === 0) {
             updatedAssessment.chapters = assessment.chapters;
+          } else {
+            // Przetwórz dane, aby zapewnić spójność pól value i status
+            const processedData = processAssessmentData(updatedAssessment);
+            updatedAssessment.chapters = processedData.chapters;
           }
           
           setAssessment(updatedAssessment);

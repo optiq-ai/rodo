@@ -129,7 +129,10 @@ export const assessmentAPI = {
         progress: calculateProgress(assessmentData)
       };
       
-      const response = await api.post('/assessments', dataToSend);
+      // Konwertuj strukturę danych do formatu oczekiwanego przez backend
+      const formattedData = formatAssessmentData(dataToSend);
+      
+      const response = await api.post('/assessments', formattedData);
       return response.data;
     } catch (error) {
       console.error('Błąd podczas tworzenia oceny:', error);
@@ -146,7 +149,10 @@ export const assessmentAPI = {
         progress: calculateProgress(assessmentData)
       };
       
-      const response = await api.put(`/assessments/${id}`, dataToSend);
+      // Konwertuj strukturę danych do formatu oczekiwanego przez backend
+      const formattedData = formatAssessmentData(dataToSend);
+      
+      const response = await api.put(`/assessments/${id}`, formattedData);
       return response.data;
     } catch (error) {
       console.error(`Błąd podczas aktualizacji oceny o ID ${id}:`, error);
@@ -179,6 +185,40 @@ export const assessmentAPI = {
   }
 };
 
+// Funkcja pomocnicza do formatowania danych oceny do formatu oczekiwanego przez backend
+function formatAssessmentData(assessment) {
+  // Głęboka kopia obiektu, aby uniknąć modyfikacji oryginalnego obiektu
+  const formattedAssessment = JSON.parse(JSON.stringify(assessment));
+  
+  // Dodaj status do każdego wymagania, jeśli nie istnieje
+  if (formattedAssessment.chapters) {
+    formattedAssessment.chapters.forEach(chapter => {
+      if (chapter.areas) {
+        chapter.areas.forEach(area => {
+          if (area.requirements) {
+            area.requirements.forEach(req => {
+              // Jeśli wymaganie ma wartość, ale nie ma statusu, dodaj status
+              if (req.value && !req.status) {
+                req.status = req.value === 'yes' ? 'COMPLETED' : 
+                             req.value === 'no' ? 'NOT_APPLICABLE' : 
+                             req.value === 'partial' ? 'IN_PROGRESS' : 'NOT_STARTED';
+              }
+              // Jeśli wymaganie ma status, ale nie ma wartości, dodaj wartość
+              if (req.status && !req.value) {
+                req.value = req.status === 'COMPLETED' ? 'yes' : 
+                           req.status === 'NOT_APPLICABLE' ? 'no' : 
+                           req.status === 'IN_PROGRESS' ? 'partial' : '';
+              }
+            });
+          }
+        });
+      }
+    });
+  }
+  
+  return formattedAssessment;
+}
+
 // Funkcja pomocnicza do obliczania postępu oceny
 function calculateProgress(assessment) {
   if (!assessment.chapters || assessment.chapters.length === 0) {
@@ -194,7 +234,9 @@ function calculateProgress(assessment) {
         if (area.requirements) {
           area.requirements.forEach(req => {
             totalRequirements++;
-            if (req.value && req.value !== '') {
+            // Sprawdź zarówno pole value jak i status
+            if ((req.value && req.value !== '') || 
+                (req.status && req.status !== 'NOT_STARTED')) {
               answeredRequirements++;
             }
           });
