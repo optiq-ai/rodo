@@ -3,7 +3,7 @@ import { Container, Row, Col, Card, Form, Button, Alert, Tab, Nav, ProgressBar }
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import RadioButtonAssessmentForm from '../components/assessment/RadioButtonAssessmentForm';
-import { assessmentAPI } from '../services/api';
+import { assessmentAPI, processAssessmentData, formatAssessmentData, valueMapper } from '../services/api';
 
 const Assessment = () => {
   const { id } = useParams();
@@ -45,9 +45,8 @@ const Assessment = () => {
               chapters: mockChapters
             });
           } else {
-            // Upewnij się, że wszystkie wymagania mają zarówno pole value jak i status
-            const processedData = processAssessmentData(data);
-            setAssessment(processedData);
+            // Dane z API są już przetwarzane w assessmentAPI.getById
+            setAssessment(data);
           }
           
           // Oblicz postęp po załadowaniu danych
@@ -104,38 +103,6 @@ const Assessment = () => {
 
     fetchData();
   }, [id]);
-
-  // Funkcja do przetwarzania danych oceny, aby zapewnić spójność pól value i status
-  const processAssessmentData = (data) => {
-    if (!data.chapters) return data;
-    
-    const processedData = { ...data };
-    
-    processedData.chapters.forEach(chapter => {
-      if (chapter.areas) {
-        chapter.areas.forEach(area => {
-          if (area.requirements) {
-            area.requirements.forEach(req => {
-              // Jeśli wymaganie ma wartość, ale nie ma statusu, dodaj status
-              if (req.value && !req.status) {
-                req.status = req.value === 'yes' ? 'COMPLETED' : 
-                             req.value === 'no' ? 'NOT_APPLICABLE' : 
-                             req.value === 'partial' ? 'IN_PROGRESS' : 'NOT_STARTED';
-              }
-              // Jeśli wymaganie ma status, ale nie ma wartości, dodaj wartość
-              if (req.status && !req.value) {
-                req.value = req.status === 'COMPLETED' ? 'yes' : 
-                           req.status === 'NOT_APPLICABLE' ? 'no' : 
-                           req.status === 'IN_PROGRESS' ? 'partial' : '';
-              }
-            });
-          }
-        });
-      }
-    });
-    
-    return processedData;
-  };
 
   // Funkcja zwracająca mockowe dane rozdziałów
   const getMockChapters = () => {
@@ -240,17 +207,13 @@ const Assessment = () => {
     
     // Jeśli zmieniamy wartość (value), zaktualizuj również status
     if (field === 'value') {
-      const status = value === 'yes' ? 'COMPLETED' : 
-                    value === 'no' ? 'NOT_APPLICABLE' : 
-                    value === 'partial' ? 'IN_PROGRESS' : 'NOT_STARTED';
+      const status = valueMapper.mapAPIValueToStatus(value);
       updatedChapters[chapterIndex].areas[areaIndex].requirements[requirementIndex].status = status;
     }
     
     // Jeśli zmieniamy status, zaktualizuj również wartość
     if (field === 'status') {
-      const valueFromStatus = value === 'COMPLETED' ? 'yes' : 
-                             value === 'NOT_APPLICABLE' ? 'no' : 
-                             value === 'IN_PROGRESS' ? 'partial' : '';
+      const valueFromStatus = valueMapper.mapStatusToAPIValue(value);
       updatedChapters[chapterIndex].areas[areaIndex].requirements[requirementIndex].value = valueFromStatus;
     }
     
@@ -406,11 +369,7 @@ const Assessment = () => {
           
           // Jeśli API nie zwraca rozdziałów, zachowaj obecne rozdziały
           if (!savedAssessment.chapters || savedAssessment.chapters.length === 0) {
-            savedAssessment.chapters = assessment.chapters;
-          } else {
-            // Przetwórz dane, aby zapewnić spójność pól value i status
-            const processedData = processAssessmentData(savedAssessment);
-            savedAssessment.chapters = processedData.chapters;
+            savedAssessment.chapters = assessmentToSave.chapters;
           }
           
           setAssessment(savedAssessment);
@@ -428,11 +387,7 @@ const Assessment = () => {
           
           // Jeśli API nie zwraca rozdziałów, zachowaj obecne rozdziały
           if (!updatedAssessment.chapters || updatedAssessment.chapters.length === 0) {
-            updatedAssessment.chapters = assessment.chapters;
-          } else {
-            // Przetwórz dane, aby zapewnić spójność pól value i status
-            const processedData = processAssessmentData(updatedAssessment);
-            updatedAssessment.chapters = processedData.chapters;
+            updatedAssessment.chapters = assessmentToSave.chapters;
           }
           
           setAssessment(updatedAssessment);
@@ -467,103 +422,159 @@ const Assessment = () => {
                              assessment.chapters[0].areas && 
                              assessment.chapters[0].areas.length > 0;
 
-  return (
-    <Container className="my-4">
-      <Row className="mb-4">
-        <Col>
-          <h1 className="fade-in">{id === 'new' ? 'Nowa ocena RODO' : 'Edycja oceny RODO'}</h1>
-          {error && <Alert variant="danger" className="fade-in">{error}</Alert>}
-          {saveSuccess && <Alert variant="success" className="fade-in">Zmiany zostały pomyślnie zapisane!</Alert>}
-        </Col>
-      </Row>
+  // Jeśli nie ma rozdziałów lub obszarów, pokaż tylko podstawowe informacje
+  if (!hasChaptersAndAreas) {
+    return (
+      <Container className="my-4">
+        <Card>
+          <Card.Header className="bg-primary text-white">
+            <h3>Formularz oceny RODO</h3>
+          </Card.Header>
+          <Card.Body>
+            <Alert variant="info">
+              Brak rozdziałów lub obszarów do wyświetlenia. Zapisz podstawowe informacje o ocenie, aby kontynuować.
+            </Alert>
+            
+            {error && <Alert variant="danger">{error}</Alert>}
+            {saveSuccess && <Alert variant="success">Ocena została zapisana pomyślnie!</Alert>}
+            
+            <Form>
+              <Form.Group className="mb-3">
+                <Form.Label>Nazwa oceny</Form.Label>
+                <Form.Control
+                  type="text"
+                  name="name"
+                  value={assessment.name}
+                  onChange={handleInputChange}
+                  placeholder="Wprowadź nazwę oceny"
+                  required
+                />
+              </Form.Group>
+              
+              <Form.Group className="mb-3">
+                <Form.Label>Opis</Form.Label>
+                <Form.Control
+                  as="textarea"
+                  rows={3}
+                  name="description"
+                  value={assessment.description}
+                  onChange={handleInputChange}
+                  placeholder="Wprowadź opis oceny (opcjonalnie)"
+                />
+              </Form.Group>
+              
+              <Button variant="primary" onClick={handleSave} disabled={loading}>
+                Zapisz ocenę
+              </Button>
+            </Form>
+          </Card.Body>
+        </Card>
+      </Container>
+    );
+  }
 
-      <Row className="mb-4">
-        <Col>
-          <Card className="fade-in">
+  // Pobierz aktualny rozdział i obszar
+  const currentChapter = assessment.chapters[currentChapterIndex];
+  const currentArea = currentChapter.areas[currentAreaIndex];
+  const totalAreas = assessment.chapters.reduce((total, chapter) => total + chapter.areas.length, 0);
+  
+  // Oblicz globalny indeks obszaru (dla paska postępu)
+  let globalAreaIndex = 0;
+  for (let i = 0; i < currentChapterIndex; i++) {
+    globalAreaIndex += assessment.chapters[i].areas.length;
+  }
+  globalAreaIndex += currentAreaIndex;
+
+  return (
+    <Container fluid className="my-4">
+      <Row>
+        <Col md={12}>
+          <Card className="mb-4">
+            <Card.Header className="bg-primary text-white d-flex justify-content-between align-items-center">
+              <h3 className="mb-0">Formularz oceny RODO</h3>
+              <div>
+                <span className="badge bg-light text-dark me-2">
+                  Status: {assessment.status}
+                </span>
+                <span className="badge bg-info">
+                  Postęp: {overallProgress}%
+                </span>
+              </div>
+            </Card.Header>
+            
             <Card.Body>
-              <Form>
-                <Form.Group className="mb-3">
-                  <Form.Label>Nazwa oceny</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="name"
-                    value={assessment.name}
-                    onChange={handleInputChange}
-                    placeholder="Wprowadź nazwę oceny"
-                    required
-                    className="comment-animated"
-                  />
-                </Form.Group>
-                <Form.Group className="mb-3">
-                  <Form.Label>Opis</Form.Label>
-                  <Form.Control
-                    as="textarea"
-                    rows={3}
-                    name="description"
-                    value={assessment.description}
-                    onChange={handleInputChange}
-                    placeholder="Wprowadź opis oceny"
-                    className="comment-animated"
-                  />
-                </Form.Group>
-                <div className="d-flex justify-content-end">
-                  <Button variant="primary" onClick={handleSave}>
-                    Zapisz ocenę
+              {error && <Alert variant="danger">{error}</Alert>}
+              {saveSuccess && <Alert variant="success">Ocena została zapisana pomyślnie!</Alert>}
+              
+              <Form className="mb-4">
+                <Row>
+                  <Col md={6}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Nazwa oceny</Form.Label>
+                      <Form.Control
+                        type="text"
+                        name="name"
+                        value={assessment.name}
+                        onChange={handleInputChange}
+                        placeholder="Wprowadź nazwę oceny"
+                        required
+                      />
+                    </Form.Group>
+                  </Col>
+                  
+                  <Col md={6}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Opis</Form.Label>
+                      <Form.Control
+                        as="textarea"
+                        rows={1}
+                        name="description"
+                        value={assessment.description}
+                        onChange={handleInputChange}
+                        placeholder="Wprowadź opis oceny (opcjonalnie)"
+                      />
+                    </Form.Group>
+                  </Col>
+                </Row>
+                
+                <div className="d-flex justify-content-between">
+                  <Button variant="primary" onClick={handleSave} disabled={loading}>
+                    💾 Zapisz ocenę
                   </Button>
+                  
+                  <div>
+                    <span className="me-2">Obszar {globalAreaIndex + 1} z {totalAreas}</span>
+                    <ProgressBar 
+                      now={(globalAreaIndex + 1) / totalAreas * 100} 
+                      style={{width: '200px', display: 'inline-block'}} 
+                    />
+                  </div>
                 </div>
               </Form>
+              
+              <div className="mb-4">
+                <h4>Rozdział: {currentChapter.name}</h4>
+                <p className="text-muted">{currentChapter.description}</p>
+              </div>
+              
+              <RadioButtonAssessmentForm
+                area={currentArea}
+                chapterIndex={currentChapterIndex}
+                areaIndex={currentAreaIndex}
+                handleRequirementChange={handleRequirementChange}
+                handleAreaScoreChange={handleAreaScoreChange}
+                handleAreaCommentChange={handleAreaCommentChange}
+                totalAreas={totalAreas}
+                currentAreaIndex={globalAreaIndex}
+                onNextArea={handleNextArea}
+                onPrevArea={handlePrevArea}
+                onSave={handleSave}
+                onExport={handleExport}
+              />
             </Card.Body>
           </Card>
         </Col>
       </Row>
-
-      {hasChaptersAndAreas ? (
-        <>
-          <Row className="mb-4">
-            <Col>
-              <div className="d-flex justify-content-between align-items-center mb-2">
-                <h5>Ogólny postęp oceny:</h5>
-                <span className="badge bg-primary">{overallProgress}%</span>
-              </div>
-              <ProgressBar 
-                now={overallProgress} 
-                variant={overallProgress < 30 ? "danger" : overallProgress < 70 ? "warning" : "success"} 
-                animated 
-                style={{height: '15px'}}
-              />
-            </Col>
-          </Row>
-
-          <Row>
-            <Col>
-              {assessment.chapters[currentChapterIndex] && assessment.chapters[currentChapterIndex].areas[currentAreaIndex] && (
-                <RadioButtonAssessmentForm
-                  area={assessment.chapters[currentChapterIndex].areas[currentAreaIndex]}
-                  chapterIndex={currentChapterIndex}
-                  areaIndex={currentAreaIndex}
-                  handleRequirementChange={handleRequirementChange}
-                  handleAreaScoreChange={handleAreaScoreChange}
-                  handleAreaCommentChange={handleAreaCommentChange}
-                  totalAreas={assessment.chapters.reduce((total, chapter) => total + chapter.areas.length, 0)}
-                  currentAreaIndex={assessment.chapters.slice(0, currentChapterIndex).reduce((total, chapter) => total + chapter.areas.length, 0) + currentAreaIndex}
-                  onNextArea={handleNextArea}
-                  onPrevArea={handlePrevArea}
-                  onSave={handleSave}
-                  onExport={handleExport}
-                />
-              )}
-            </Col>
-          </Row>
-        </>
-      ) : (
-        <Row>
-          <Col>
-            <Alert variant="info">
-              Brak rozdziałów lub obszarów do wyświetlenia. Zapisz podstawowe informacje o ocenie, aby kontynuować.
-            </Alert>
-          </Col>
-        </Row>
-      )}
     </Container>
   );
 };

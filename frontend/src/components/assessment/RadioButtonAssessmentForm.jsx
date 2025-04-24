@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Form, Button, ProgressBar, Card } from 'react-bootstrap';
+import { valueMapper } from '../../services/api';
 
 const RadioButtonAssessmentForm = ({ 
   area, 
@@ -33,7 +34,7 @@ const RadioButtonAssessmentForm = ({
   
   const handleRadioChange = (requirementIndex, value) => {
     // Mapowanie wartości z interfejsu użytkownika na wartości używane w API
-    const apiValue = mapUIValueToAPIValue(value);
+    const apiValue = valueMapper.mapUIValueToAPIValue(value);
     
     // Aktualizacja wartości wymagania
     handleRequirementChange(chapterIndex, areaIndex, requirementIndex, 'value', apiValue);
@@ -48,28 +49,6 @@ const RadioButtonAssessmentForm = ({
       }
     });
     setAnswered(answeredCount);
-  };
-  
-  // Funkcja mapująca wartości z interfejsu użytkownika na wartości używane w API
-  const mapUIValueToAPIValue = (uiValue) => {
-    switch(uiValue) {
-      case 'TAK': return 'yes';
-      case 'NIE': return 'no';
-      case 'W REALIZACJI': return 'partial';
-      case 'ND': return 'na';
-      default: return '';
-    }
-  };
-  
-  // Funkcja mapująca wartości z API na wartości używane w interfejsie użytkownika
-  const mapAPIValueToUIValue = (apiValue) => {
-    switch(apiValue) {
-      case 'yes': return 'TAK';
-      case 'no': return 'NIE';
-      case 'partial': return 'W REALIZACJI';
-      case 'na': return 'ND';
-      default: return '';
-    }
   };
 
   const getStatusIcon = (value) => {
@@ -121,7 +100,7 @@ const RadioButtonAssessmentForm = ({
         
         {area.requirements.map((requirement, requirementIndex) => {
           // Mapuj wartość z API na wartość UI dla wyświetlenia
-          const uiValue = mapAPIValueToUIValue(requirement.value);
+          const uiValue = valueMapper.mapAPIValueToUIValue(requirement.value);
           
           return (
             <div 

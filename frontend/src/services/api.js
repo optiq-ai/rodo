@@ -5,293 +5,432 @@ const api = axios.create({
   baseURL: 'http://localhost:8080'
 });
 
-// Add token to URL as a parameter for all requests
+// Dodawanie tokenu do URL jako parametr dla wszystkich żądań
 api.interceptors.request.use(
   (config) => {
+    console.log(`[API Request] ${config.method?.toUpperCase()} ${config.url}`);
+    
     const token = localStorage.getItem('token');
     if (token) {
-      // Add token as URL parameter
-      const separator = config.url.includes('?') ? '&' : '?';
+      // Dodawanie tokenu jako parametr URL
+      const separator = config.url?.includes('?') ? '&' : '?';
       config.url = `${config.url}${separator}token=${token}`;
+      console.log(`[API Request] Dodano token do URL: ${config.url}`);
+    } else {
+      console.log('[API Request] Brak tokenu w localStorage');
     }
+    
+    if (config.data) {
+      console.log('[API Request] Dane wysyłane:', JSON.stringify(config.data, null, 2));
+    }
+    
     return config;
   },
   (error) => {
+    console.error('[API Request Error]', error);
+    return Promise.reject(error);
+  }
+);
+
+// Interceptor dla odpowiedzi
+api.interceptors.response.use(
+  (response) => {
+    console.log(`[API Response] ${response.status} ${response.statusText} od ${response.config.url}`);
+    console.log('[API Response] Otrzymane dane:', JSON.stringify(response.data, null, 2));
+    return response;
+  },
+  (error) => {
+    console.error(`[API Error] ${error.response?.status || 'Unknown'} od ${error.config?.url}`);
+    if (error.response?.data) {
+      console.error('[API Error] Szczegóły:', JSON.stringify(error.response.data, null, 2));
+    }
     return Promise.reject(error);
   }
 );
 
 // Serwis API dla uwierzytelniania
 export const authAPI = {
-  // Logowanie użytkownika
   login: async (credentials) => {
+    console.log('[authAPI.login] Próba logowania:', credentials.userName);
     try {
       const response = await api.post('/login', credentials);
+      console.log('[authAPI.login] Sukces, token otrzymany');
       return {
         success: true,
         token: response.data.token,
         username: credentials.userName
       };
     } catch (error) {
+      console.error('[authAPI.login] Błąd logowania:', error.message);
       return {
         success: false,
-        error: error.response?.data?.message || 'Błąd logowania'
+        error: error.response?.data?.error || 'Błąd logowania'
       };
     }
   },
-
-  // Rejestracja użytkownika
+  
   register: async (userData) => {
+    console.log('[authAPI.register] Próba rejestracji:', userData.userName);
     try {
       const response = await api.post('/register', userData);
+      console.log('[authAPI.register] Sukces, token otrzymany');
       return {
         success: true,
         token: response.data.token,
         username: userData.userName
       };
     } catch (error) {
+      console.error('[authAPI.register] Błąd rejestracji:', error.message);
       return {
         success: false,
-        error: error.response?.data?.message || 'Błąd rejestracji'
+        error: error.response?.data?.error || 'Błąd rejestracji'
       };
     }
   },
-
-  // Weryfikacja tokenu
+  
   verifyToken: async (token) => {
+    console.log('[authAPI.verifyToken] Weryfikacja tokenu');
     try {
       const response = await api.post('/verify-token', { token });
+      console.log('[authAPI.verifyToken] Token zweryfikowany pomyślnie');
       return {
         success: true,
-        user: response.data
+        username: response.data.username
       };
     } catch (error) {
+      console.error('[authAPI.verifyToken] Błąd weryfikacji tokenu:', error.message);
       return {
         success: false,
-        error: error.response?.data?.message || 'Błąd weryfikacji tokenu'
+        error: error.response?.data?.error || 'Błąd weryfikacji tokenu'
       };
     }
   }
 };
 
-// Serwis API dla ocen
-export const assessmentAPI = {
-  // Pobieranie wszystkich ocen użytkownika
-  getAll: async () => {
-    try {
-      const response = await api.get('/assessments');
-      return response.data;
-    } catch (error) {
-      console.error('Błąd podczas pobierania ocen:', error);
-      throw error;
+// Funkcje mapowania wartości między UI i API
+export const valueMapper = {
+  // Mapowanie wartości z UI na API
+  mapUIValueToAPIValue: (uiValue) => {
+    switch(uiValue) {
+      case 'TAK': return 'yes';
+      case 'NIE': return 'no';
+      case 'W REALIZACJI': return 'partial';
+      case 'ND': return 'na';
+      default: return '';
     }
   },
-
-  // Pobieranie podsumowania ocen
-  getSummary: async () => {
-    try {
-      const response = await api.get('/assessments/summary');
-      return response.data;
-    } catch (error) {
-      console.error('Błąd podczas pobierania podsumowania ocen:', error);
-      throw error;
+  
+  // Mapowanie wartości z API na UI
+  mapAPIValueToUIValue: (apiValue) => {
+    switch(apiValue) {
+      case 'yes': return 'TAK';
+      case 'no': return 'NIE';
+      case 'partial': return 'W REALIZACJI';
+      case 'na': return 'ND';
+      default: return '';
     }
   },
-
-  // Pobieranie szczegółów oceny
-  getById: async (id) => {
-    try {
-      const response = await api.get(`/assessments/${id}`);
-      return response.data;
-    } catch (error) {
-      console.error(`Błąd podczas pobierania oceny o ID ${id}:`, error);
-      throw error;
+  
+  // Mapowanie statusu na wartość API
+  mapStatusToAPIValue: (status) => {
+    switch(status) {
+      case 'COMPLETED': return 'yes';
+      case 'NOT_APPLICABLE': return 'no';
+      case 'IN_PROGRESS': return 'partial';
+      case 'NOT_STARTED': return '';
+      default: return '';
     }
   },
-
-  // Pobieranie szablonu oceny
-  getTemplate: async () => {
-    try {
-      const response = await api.get('/assessments/template');
-      return response.data;
-    } catch (error) {
-      console.error('Błąd podczas pobierania szablonu oceny:', error);
-      throw error;
-    }
-  },
-
-  // Tworzenie nowej oceny
-  create: async (assessmentData) => {
-    try {
-      // Dodaj pole progress do danych oceny
-      const dataToSend = {
-        ...assessmentData,
-        progress: calculateProgress(assessmentData)
-      };
-      
-      // Konwertuj strukturę danych do formatu oczekiwanego przez backend
-      const formattedData = formatAssessmentData(dataToSend);
-      
-      const response = await api.post('/assessments', formattedData);
-      return response.data;
-    } catch (error) {
-      console.error('Błąd podczas tworzenia oceny:', error);
-      throw error;
-    }
-  },
-
-  // Aktualizacja oceny
-  update: async (id, assessmentData) => {
-    try {
-      // Dodaj pole progress do danych oceny
-      const dataToSend = {
-        ...assessmentData,
-        progress: calculateProgress(assessmentData)
-      };
-      
-      // Konwertuj strukturę danych do formatu oczekiwanego przez backend
-      const formattedData = formatAssessmentData(dataToSend);
-      
-      const response = await api.put(`/assessments/${id}`, formattedData);
-      return response.data;
-    } catch (error) {
-      console.error(`Błąd podczas aktualizacji oceny o ID ${id}:`, error);
-      throw error;
-    }
-  },
-
-  // Usuwanie oceny
-  delete: async (id) => {
-    try {
-      const response = await api.delete(`/assessments/${id}`);
-      return response.data;
-    } catch (error) {
-      console.error(`Błąd podczas usuwania oceny o ID ${id}:`, error);
-      throw error;
-    }
-  },
-
-  // Eksport oceny do PDF
-  exportAssessment: async (id) => {
-    try {
-      const response = await api.get(`/assessments/${id}/export`, {
-        responseType: 'blob'
-      });
-      return response.data;
-    } catch (error) {
-      console.error(`Błąd podczas eksportu oceny o ID ${id}:`, error);
-      throw error;
+  
+  // Mapowanie wartości API na status
+  mapAPIValueToStatus: (apiValue) => {
+    switch(apiValue) {
+      case 'yes': return 'COMPLETED';
+      case 'no': return 'NOT_APPLICABLE';
+      case 'partial': return 'IN_PROGRESS';
+      case '': return 'NOT_STARTED';
+      default: return 'NOT_STARTED';
     }
   }
 };
 
-// Funkcja pomocnicza do formatowania danych oceny do formatu oczekiwanego przez backend
-function formatAssessmentData(assessment) {
-  // Głęboka kopia obiektu, aby uniknąć modyfikacji oryginalnego obiektu
-  const formattedAssessment = JSON.parse(JSON.stringify(assessment));
+// Funkcja do formatowania danych oceny przed wysłaniem do API
+export const formatAssessmentData = (assessment) => {
+  console.log('[formatAssessmentData] Formatowanie danych oceny przed wysłaniem');
   
-  // Dodaj status do każdego wymagania, jeśli nie istnieje
-  if (formattedAssessment.chapters) {
-    formattedAssessment.chapters.forEach(chapter => {
-      if (chapter.areas) {
-        chapter.areas.forEach(area => {
-          if (area.requirements) {
-            area.requirements.forEach(req => {
-              // Jeśli wymaganie ma wartość, ale nie ma statusu, dodaj status
-              if (req.value && !req.status) {
-                req.status = req.value === 'yes' ? 'COMPLETED' : 
-                             req.value === 'no' ? 'NOT_APPLICABLE' : 
-                             req.value === 'partial' ? 'IN_PROGRESS' : 'NOT_STARTED';
-              }
-              // Jeśli wymaganie ma status, ale nie ma wartości, dodaj wartość
-              if (req.status && !req.value) {
-                req.value = req.status === 'COMPLETED' ? 'yes' : 
-                           req.status === 'NOT_APPLICABLE' ? 'no' : 
-                           req.status === 'IN_PROGRESS' ? 'partial' : '';
-              }
-            });
-          }
-        });
-      }
-    });
+  if (!assessment.chapters) {
+    console.log('[formatAssessmentData] Brak rozdziałów, zwracam dane bez zmian');
+    return assessment;
   }
   
-  return formattedAssessment;
-}
-
-// Funkcja pomocnicza do obliczania postępu oceny
-function calculateProgress(assessment) {
-  if (!assessment.chapters || assessment.chapters.length === 0) {
-    return 0;
-  }
-
-  let totalRequirements = 0;
-  let answeredRequirements = 0;
-
-  assessment.chapters.forEach(chapter => {
+  const formattedAssessment = { ...assessment };
+  
+  formattedAssessment.chapters.forEach(chapter => {
     if (chapter.areas) {
       chapter.areas.forEach(area => {
         if (area.requirements) {
           area.requirements.forEach(req => {
-            totalRequirements++;
-            // Sprawdź zarówno pole value jak i status
-            if ((req.value && req.value !== '') || 
-                (req.status && req.status !== 'NOT_STARTED')) {
-              answeredRequirements++;
+            // Upewnij się, że status i value są spójne
+            if (req.value && !req.status) {
+              req.status = valueMapper.mapAPIValueToStatus(req.value);
+            } else if (req.status && !req.value) {
+              req.value = valueMapper.mapStatusToAPIValue(req.status);
+            }
+            
+            // Upewnij się, że komentarz nie jest null/undefined
+            if (req.comment === null || req.comment === undefined) {
+              req.comment = '';
             }
           });
+        }
+        
+        // Upewnij się, że komentarz obszaru nie jest null/undefined
+        if (area.comment === null || area.comment === undefined) {
+          area.comment = '';
         }
       });
     }
   });
+  
+  console.log('[formatAssessmentData] Formatowanie zakończone');
+  return formattedAssessment;
+};
 
-  return totalRequirements > 0 ? Math.round((answeredRequirements / totalRequirements) * 100) : 0;
-}
+// Funkcja do przetwarzania danych oceny po otrzymaniu z API
+export const processAssessmentData = (assessment) => {
+  console.log('[processAssessmentData] Przetwarzanie danych oceny po otrzymaniu z API');
+  
+  if (!assessment.chapters || assessment.chapters.length === 0) {
+    console.log('[processAssessmentData] Brak rozdziałów, zwracam dane bez zmian');
+    return assessment;
+  }
+  
+  const processedAssessment = { ...assessment };
+  
+  processedAssessment.chapters.forEach(chapter => {
+    if (chapter.areas) {
+      chapter.areas.forEach(area => {
+        if (area.requirements) {
+          area.requirements.forEach(req => {
+            // Upewnij się, że status i value są spójne
+            if (req.value && !req.status) {
+              req.status = valueMapper.mapAPIValueToStatus(req.value);
+            } else if (req.status && !req.value) {
+              req.value = valueMapper.mapStatusToAPIValue(req.status);
+            }
+            
+            // Upewnij się, że komentarz nie jest null/undefined
+            if (req.comment === null || req.comment === undefined) {
+              req.comment = '';
+            }
+          });
+        }
+        
+        // Upewnij się, że komentarz obszaru nie jest null/undefined
+        if (area.comment === null || area.comment === undefined) {
+          area.comment = '';
+        }
+      });
+    }
+  });
+  
+  console.log('[processAssessmentData] Przetwarzanie zakończone');
+  return processedAssessment;
+};
+
+// Serwis API dla ocen
+export const assessmentAPI = {
+  getAll: async () => {
+    console.log('[assessmentAPI.getAll] Pobieranie wszystkich ocen');
+    try {
+      const response = await api.get('/assessments');
+      console.log(`[assessmentAPI.getAll] Pobrano ${response.data.length} ocen`);
+      return response.data;
+    } catch (error) {
+      console.error('[assessmentAPI.getAll] Błąd pobierania ocen:', error.message);
+      throw error;
+    }
+  },
+  
+  getSummary: async () => {
+    console.log('[assessmentAPI.getSummary] Pobieranie podsumowania ocen');
+    try {
+      const response = await api.get('/assessments/summary');
+      console.log('[assessmentAPI.getSummary] Pobrano podsumowanie ocen');
+      return response.data;
+    } catch (error) {
+      console.error('[assessmentAPI.getSummary] Błąd pobierania podsumowania:', error.message);
+      throw error;
+    }
+  },
+  
+  getById: async (id) => {
+    console.log(`[assessmentAPI.getById] Pobieranie oceny o ID: ${id}`);
+    try {
+      const response = await api.get(`/assessments/${id}`);
+      console.log(`[assessmentAPI.getById] Pobrano ocenę o ID: ${id}`);
+      console.log(`[assessmentAPI.getById] Liczba rozdziałów: ${response.data.chapters?.length || 0}`);
+      
+      // Przetwarzanie danych oceny po otrzymaniu z API
+      const processedData = processAssessmentData(response.data);
+      return processedData;
+    } catch (error) {
+      console.error(`[assessmentAPI.getById] Błąd pobierania oceny ${id}:`, error.message);
+      throw error;
+    }
+  },
+  
+  getTemplate: async () => {
+    console.log('[assessmentAPI.getTemplate] Pobieranie szablonu oceny');
+    try {
+      const response = await api.get('/assessments/template');
+      console.log('[assessmentAPI.getTemplate] Pobrano szablon oceny');
+      console.log(`[assessmentAPI.getTemplate] Liczba rozdziałów w szablonie: ${response.data.chapters?.length || 0}`);
+      
+      // Przetwarzanie danych szablonu po otrzymaniu z API
+      const processedData = processAssessmentData(response.data);
+      return processedData;
+    } catch (error) {
+      console.error('[assessmentAPI.getTemplate] Błąd pobierania szablonu:', error.message);
+      throw error;
+    }
+  },
+  
+  create: async (assessmentData) => {
+    console.log('[assessmentAPI.create] Tworzenie nowej oceny:', assessmentData.name);
+    
+    // Formatowanie danych przed wysłaniem
+    const formattedData = formatAssessmentData(assessmentData);
+    
+    // Obliczanie postępu przed wysłaniem
+    const progress = calculateProgress(formattedData);
+    console.log(`[assessmentAPI.create] Obliczony postęp: ${progress}%`);
+    
+    // Aktualizacja statusu na podstawie postępu
+    if (progress === 100) {
+      formattedData.status = 'ZAKOŃCZONA';
+    } else if (progress > 0) {
+      formattedData.status = 'W TRAKCIE';
+    } else {
+      formattedData.status = 'DRAFT';
+    }
+    
+    // Dodanie postępu do danych
+    formattedData.progress = progress;
+    
+    try {
+      const response = await api.post('/assessments', formattedData);
+      console.log(`[assessmentAPI.create] Utworzono ocenę o ID: ${response.data.id}`);
+      return response.data;
+    } catch (error) {
+      console.error('[assessmentAPI.create] Błąd tworzenia oceny:', error.message);
+      throw error;
+    }
+  },
+  
+  update: async (id, assessmentData) => {
+    console.log(`[assessmentAPI.update] Aktualizacja oceny o ID: ${id}`);
+    
+    // Formatowanie danych przed wysłaniem
+    const formattedData = formatAssessmentData(assessmentData);
+    
+    // Obliczanie postępu przed wysłaniem
+    const progress = calculateProgress(formattedData);
+    console.log(`[assessmentAPI.update] Obliczony postęp: ${progress}%`);
+    
+    // Aktualizacja statusu na podstawie postępu
+    if (progress === 100) {
+      formattedData.status = 'ZAKOŃCZONA';
+    } else if (progress > 0) {
+      formattedData.status = 'W TRAKCIE';
+    } else {
+      formattedData.status = 'DRAFT';
+    }
+    
+    // Dodanie postępu do danych
+    formattedData.progress = progress;
+    
+    try {
+      const response = await api.put(`/assessments/${id}`, formattedData);
+      console.log(`[assessmentAPI.update] Zaktualizowano ocenę o ID: ${id}`);
+      return response.data;
+    } catch (error) {
+      console.error(`[assessmentAPI.update] Błąd aktualizacji oceny ${id}:`, error.message);
+      throw error;
+    }
+  },
+  
+  delete: async (id) => {
+    console.log(`[assessmentAPI.delete] Usuwanie oceny o ID: ${id}`);
+    try {
+      const response = await api.delete(`/assessments/${id}`);
+      console.log(`[assessmentAPI.delete] Usunięto ocenę o ID: ${id}`);
+      return response.data;
+    } catch (error) {
+      console.error(`[assessmentAPI.delete] Błąd usuwania oceny ${id}:`, error.message);
+      throw error;
+    }
+  },
+  
+  exportAssessment: async (id) => {
+    console.log(`[assessmentAPI.exportAssessment] Eksport oceny o ID: ${id}`);
+    try {
+      const response = await api.get(`/assessments/${id}/export`);
+      console.log(`[assessmentAPI.exportAssessment] Wyeksportowano ocenę o ID: ${id}`);
+      return response.data;
+    } catch (error) {
+      console.error(`[assessmentAPI.exportAssessment] Błąd eksportu oceny ${id}:`, error.message);
+      throw error;
+    }
+  }
+};
 
 // Serwis API dla raportów
 export const reportAPI = {
-  // Pobieranie wszystkich raportów
   getAll: async (filters = {}) => {
+    console.log('[reportAPI.getAll] Pobieranie raportów z filtrami:', filters);
     try {
       const response = await api.get('/reports', { params: filters });
+      console.log(`[reportAPI.getAll] Pobrano ${response.data.length} raportów`);
       return response.data;
     } catch (error) {
-      console.error('Błąd podczas pobierania raportów:', error);
+      console.error('[reportAPI.getAll] Błąd pobierania raportów:', error.message);
       throw error;
     }
   },
-
-  // Pobieranie szczegółów raportu
+  
   getById: async (id) => {
+    console.log(`[reportAPI.getById] Pobieranie raportu o ID: ${id}`);
     try {
       const response = await api.get(`/reports/${id}`);
+      console.log(`[reportAPI.getById] Pobrano raport o ID: ${id}`);
       return response.data;
     } catch (error) {
-      console.error(`Błąd podczas pobierania raportu o ID ${id}:`, error);
+      console.error(`[reportAPI.getById] Błąd pobierania raportu ${id}:`, error.message);
       throw error;
     }
   },
-
-  // Pobieranie szczegółów obszaru
+  
   getAreaById: async (id) => {
+    console.log(`[reportAPI.getAreaById] Pobieranie obszaru o ID: ${id}`);
     try {
       const response = await api.get(`/reports/areas/${id}`);
+      console.log(`[reportAPI.getAreaById] Pobrano obszar o ID: ${id}`);
       return response.data;
     } catch (error) {
-      console.error(`Błąd podczas pobierania obszaru o ID ${id}:`, error);
+      console.error(`[reportAPI.getAreaById] Błąd pobierania obszaru ${id}:`, error.message);
       throw error;
     }
   },
-
-  // Eksport raportu do PDF
-  exportReport: async (id) => {
+  
+  exportReport: async (id, format = 'pdf') => {
+    console.log(`[reportAPI.exportReport] Eksport raportu o ID: ${id} w formacie: ${format}`);
     try {
-      const response = await api.get(`/reports/${id}/export`, {
-        responseType: 'blob'
-      });
+      const response = await api.get(`/reports/${id}/export?format=${format}`);
+      console.log(`[reportAPI.exportReport] Wyeksportowano raport o ID: ${id}`);
       return response.data;
     } catch (error) {
-      console.error(`Błąd podczas eksportu raportu o ID ${id}:`, error);
+      console.error(`[reportAPI.exportReport] Błąd eksportu raportu ${id}:`, error.message);
       throw error;
     }
   }
@@ -299,104 +438,26 @@ export const reportAPI = {
 
 // Serwis API dla firm
 export const companyAPI = {
-  // Pobieranie wszystkich firm
   getAll: async () => {
+    console.log('[companyAPI.getAll] Pobieranie wszystkich firm');
     try {
       const response = await api.get('/companies');
+      console.log(`[companyAPI.getAll] Pobrano ${response.data.length} firm`);
       return response.data;
     } catch (error) {
-      console.error('Błąd podczas pobierania firm:', error);
+      console.error('[companyAPI.getAll] Błąd pobierania firm:', error.message);
       throw error;
     }
   },
-
-  // Pobieranie szczegółów firmy
+  
   getById: async (id) => {
+    console.log(`[companyAPI.getById] Pobieranie firmy o ID: ${id}`);
     try {
       const response = await api.get(`/companies/${id}`);
+      console.log(`[companyAPI.getById] Pobrano firmę o ID: ${id}`);
       return response.data;
     } catch (error) {
-      console.error(`Błąd podczas pobierania firmy o ID ${id}:`, error);
-      throw error;
-    }
-  },
-
-  // Tworzenie nowej firmy
-  create: async (companyData) => {
-    try {
-      const response = await api.post('/companies', companyData);
-      return response.data;
-    } catch (error) {
-      console.error('Błąd podczas tworzenia firmy:', error);
-      throw error;
-    }
-  },
-
-  // Aktualizacja firmy
-  update: async (id, companyData) => {
-    try {
-      const response = await api.put(`/companies/${id}`, companyData);
-      return response.data;
-    } catch (error) {
-      console.error(`Błąd podczas aktualizacji firmy o ID ${id}:`, error);
-      throw error;
-    }
-  },
-
-  // Usuwanie firmy
-  delete: async (id) => {
-    try {
-      const response = await api.delete(`/companies/${id}`);
-      return response.data;
-    } catch (error) {
-      console.error(`Błąd podczas usuwania firmy o ID ${id}:`, error);
-      throw error;
-    }
-  }
-};
-
-// Serwis API dla użytkowników
-export const userAPI = {
-  // Pobieranie wszystkich użytkowników
-  getAll: async () => {
-    try {
-      const response = await api.get('/users');
-      return response.data;
-    } catch (error) {
-      console.error('Błąd podczas pobierania użytkowników:', error);
-      throw error;
-    }
-  },
-
-  // Pobieranie szczegółów użytkownika
-  getById: async (id) => {
-    try {
-      const response = await api.get(`/users/${id}`);
-      return response.data;
-    } catch (error) {
-      console.error(`Błąd podczas pobierania użytkownika o ID ${id}:`, error);
-      throw error;
-    }
-  },
-
-  // Aktualizacja użytkownika
-  update: async (id, userData) => {
-    try {
-      const response = await api.put(`/users/${id}`, userData);
-      return response.data;
-    } catch (error) {
-      console.error(`Błąd podczas aktualizacji użytkownika o ID ${id}:`, error);
-      throw error;
-    }
-  },
-
-  // Zmiana hasła użytkownika
-  changePassword: async (id, passwordData) => {
-    try {
-      const response = await api.put(`/users/${id}/password`, passwordData);
-      return response.data;
-    } catch (error) {
-      console.error(`Błąd podczas zmiany hasła użytkownika o ID ${id}:`, error);
+      console.error(`[companyAPI.getById] Błąd pobierania firmy ${id}:`, error.message);
       throw error;
     }
   }
@@ -404,27 +465,107 @@ export const userAPI = {
 
 // Serwis API dla subskrypcji
 export const subscriptionAPI = {
-  // Pobieranie szczegółów subskrypcji
-  getCurrent: async () => {
+  getAll: async () => {
+    console.log('[subscriptionAPI.getAll] Pobieranie wszystkich subskrypcji');
     try {
-      const response = await api.get('/subscriptions/current');
+      const response = await api.get('/subscriptions');
+      console.log(`[subscriptionAPI.getAll] Pobrano ${response.data.length} subskrypcji`);
       return response.data;
     } catch (error) {
-      console.error('Błąd podczas pobierania subskrypcji:', error);
+      console.error('[subscriptionAPI.getAll] Błąd pobierania subskrypcji:', error.message);
       throw error;
     }
   },
-
-  // Aktualizacja subskrypcji
-  update: async (subscriptionData) => {
+  
+  getById: async (id) => {
+    console.log(`[subscriptionAPI.getById] Pobieranie subskrypcji o ID: ${id}`);
     try {
-      const response = await api.put('/subscriptions/current', subscriptionData);
+      const response = await api.get(`/subscriptions/${id}`);
+      console.log(`[subscriptionAPI.getById] Pobrano subskrypcję o ID: ${id}`);
       return response.data;
     } catch (error) {
-      console.error('Błąd podczas aktualizacji subskrypcji:', error);
+      console.error(`[subscriptionAPI.getById] Błąd pobierania subskrypcji ${id}:`, error.message);
       throw error;
     }
   }
+};
+
+// Serwis API dla użytkowników
+export const userAPI = {
+  getAll: async () => {
+    console.log('[userAPI.getAll] Pobieranie wszystkich użytkowników');
+    try {
+      const response = await api.get('/users');
+      console.log(`[userAPI.getAll] Pobrano ${response.data.length} użytkowników`);
+      return response.data;
+    } catch (error) {
+      console.error('[userAPI.getAll] Błąd pobierania użytkowników:', error.message);
+      throw error;
+    }
+  },
+  
+  getById: async (id) => {
+    console.log(`[userAPI.getById] Pobieranie użytkownika o ID: ${id}`);
+    try {
+      const response = await api.get(`/users/${id}`);
+      console.log(`[userAPI.getById] Pobrano użytkownika o ID: ${id}`);
+      return response.data;
+    } catch (error) {
+      console.error(`[userAPI.getById] Błąd pobierania użytkownika ${id}:`, error.message);
+      throw error;
+    }
+  },
+  
+  getCurrent: async () => {
+    console.log('[userAPI.getCurrent] Pobieranie bieżącego użytkownika');
+    try {
+      const response = await api.get('/users/current');
+      console.log('[userAPI.getCurrent] Pobrano bieżącego użytkownika');
+      return response.data;
+    } catch (error) {
+      console.error('[userAPI.getCurrent] Błąd pobierania bieżącego użytkownika:', error.message);
+      throw error;
+    }
+  }
+};
+
+// Funkcja pomocnicza do obliczania postępu oceny
+const calculateProgress = (assessment) => {
+  console.log('[calculateProgress] Obliczanie postępu oceny');
+  
+  if (!assessment.chapters || assessment.chapters.length === 0) {
+    console.log('[calculateProgress] Brak rozdziałów, postęp: 0%');
+    return 0;
+  }
+  
+  let totalRequirements = 0;
+  let completedRequirements = 0;
+  
+  assessment.chapters.forEach(chapter => {
+    if (chapter.areas) {
+      chapter.areas.forEach(area => {
+        if (area.requirements) {
+          area.requirements.forEach(requirement => {
+            totalRequirements++;
+            
+            // Sprawdzanie, czy wymaganie jest ukończone
+            const value = requirement.value;
+            const status = requirement.status;
+            
+            if ((value && value !== '') || 
+                (status && (status === 'COMPLETED' || status === 'NOT_APPLICABLE'))) {
+              completedRequirements++;
+            }
+          });
+        }
+      });
+    }
+  });
+  
+  const progress = totalRequirements > 0 ? Math.round((completedRequirements / totalRequirements) * 100) : 0;
+  console.log(`[calculateProgress] Ukończone wymagania: ${completedRequirements}/${totalRequirements}, postęp: ${progress}%`);
+  
+  return progress;
 };
 
 export default api;
