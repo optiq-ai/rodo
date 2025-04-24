@@ -17,7 +17,7 @@ import java.util.Arrays;
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
 
-    private static final String[] PERMITTED_PATHS = {"/login", "/register"};
+    private static final String[] PERMITTED_PATHS = {"/login", "/register", "/swagger-ui", "/v3/api-docs", "/swagger-resources"};
 
     private final UserAuthProvider userAuthProvider;
 
@@ -31,6 +31,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         
         // Skip filter for permitted paths
         if (Arrays.stream(PERMITTED_PATHS).anyMatch(path::startsWith)) {
+            System.out.println("Skipping filter for permitted path: " + path);
             filterChain.doFilter(request, response);
             return;
         }

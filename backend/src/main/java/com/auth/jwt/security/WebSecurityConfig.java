@@ -76,8 +76,7 @@ public class WebSecurityConfig {
                 .authorizeHttpRequests(authorize ->
                         authorize
                                 .requestMatchers("/login", "/register").permitAll()
-                                .requestMatchers("/swagger-ui/**").hasRole("ADMIN")
-                                .requestMatchers("/v3/**").hasRole("ADMIN")
+                                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**").permitAll()
                                 .anyRequest().authenticated())
                 .addFilterBefore(new JwtAuthFilter(userAuthProvider), BasicAuthenticationFilter.class)
                 .exceptionHandling(exception ->
@@ -95,12 +94,11 @@ public class WebSecurityConfig {
 
     @Bean
     public WebSecurityCustomizer ignoringCustomizer() {
-        return (web) -> web.ignoring().requestMatchers("/login", "/register")
+        return (web) -> web.ignoring()
                 .requestMatchers("/login", "/register")
                 .requestMatchers("/swagger-ui.html")
                 .requestMatchers("/swagger-ui/**")
                 .requestMatchers("/v3/api-docs/**")
                 .requestMatchers("/swagger-resources/**");
     }
-
 }
