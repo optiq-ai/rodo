@@ -23,6 +23,7 @@ api.interceptors.request.use(
 
 // Serwis API dla uwierzytelniania
 export const authAPI = {
+  // Logowanie użytkownika
   login: async (credentials) => {
     try {
       const response = await api.post('/login', credentials);
@@ -38,7 +39,8 @@ export const authAPI = {
       };
     }
   },
-  
+
+  // Rejestracja użytkownika
   register: async (userData) => {
     try {
       const response = await api.post('/register', userData);
@@ -54,21 +56,19 @@ export const authAPI = {
       };
     }
   },
-  
-  // Poprawiona funkcja weryfikacji tokenu z prawidłową ścieżką
-  verifyToken: async () => {
+
+  // Weryfikacja tokenu
+  verifyToken: async (token) => {
     try {
-      const response = await api.get('/verify-token');
+      const response = await api.post('/verify-token', { token });
       return {
-        valid: true,
-        username: response.data.username,
-        email: response.data.email,
-        role: response.data.role
+        success: true,
+        user: response.data
       };
     } catch (error) {
       return {
-        valid: false,
-        error: error.response?.data?.message || 'Nieprawidłowy token'
+        success: false,
+        error: error.response?.data?.message || 'Błąd weryfikacji tokenu'
       };
     }
   }
@@ -86,7 +86,7 @@ export const assessmentAPI = {
       throw error;
     }
   },
-  
+
   // Pobieranie podsumowania ocen
   getSummary: async () => {
     try {
@@ -97,8 +97,8 @@ export const assessmentAPI = {
       throw error;
     }
   },
-  
-  // Pobieranie oceny po ID
+
+  // Pobieranie szczegółów oceny
   getById: async (id) => {
     try {
       const response = await api.get(`/assessments/${id}`);
@@ -108,7 +108,7 @@ export const assessmentAPI = {
       throw error;
     }
   },
-  
+
   // Pobieranie szablonu oceny
   getTemplate: async () => {
     try {
@@ -119,29 +119,41 @@ export const assessmentAPI = {
       throw error;
     }
   },
-  
+
   // Tworzenie nowej oceny
   create: async (assessmentData) => {
     try {
-      const response = await api.post('/assessments', assessmentData);
+      // Dodaj pole progress do danych oceny
+      const dataToSend = {
+        ...assessmentData,
+        progress: calculateProgress(assessmentData)
+      };
+      
+      const response = await api.post('/assessments', dataToSend);
       return response.data;
     } catch (error) {
       console.error('Błąd podczas tworzenia oceny:', error);
       throw error;
     }
   },
-  
-  // Aktualizacja istniejącej oceny
+
+  // Aktualizacja oceny
   update: async (id, assessmentData) => {
     try {
-      const response = await api.put(`/assessments/${id}`, assessmentData);
+      // Dodaj pole progress do danych oceny
+      const dataToSend = {
+        ...assessmentData,
+        progress: calculateProgress(assessmentData)
+      };
+      
+      const response = await api.put(`/assessments/${id}`, dataToSend);
       return response.data;
     } catch (error) {
       console.error(`Błąd podczas aktualizacji oceny o ID ${id}:`, error);
       throw error;
     }
   },
-  
+
   // Usuwanie oceny
   delete: async (id) => {
     try {
@@ -152,7 +164,7 @@ export const assessmentAPI = {
       throw error;
     }
   },
-  
+
   // Eksport oceny do PDF
   exportAssessment: async (id) => {
     try {
@@ -167,6 +179,33 @@ export const assessmentAPI = {
   }
 };
 
+// Funkcja pomocnicza do obliczania postępu oceny
+function calculateProgress(assessment) {
+  if (!assessment.chapters || assessment.chapters.length === 0) {
+    return 0;
+  }
+
+  let totalRequirements = 0;
+  let answeredRequirements = 0;
+
+  assessment.chapters.forEach(chapter => {
+    if (chapter.areas) {
+      chapter.areas.forEach(area => {
+        if (area.requirements) {
+          area.requirements.forEach(req => {
+            totalRequirements++;
+            if (req.value && req.value !== '') {
+              answeredRequirements++;
+            }
+          });
+        }
+      });
+    }
+  });
+
+  return totalRequirements > 0 ? Math.round((answeredRequirements / totalRequirements) * 100) : 0;
+}
+
 // Serwis API dla raportów
 export const reportAPI = {
   // Pobieranie wszystkich raportów
@@ -179,8 +218,8 @@ export const reportAPI = {
       throw error;
     }
   },
-  
-  // Pobieranie raportu po ID
+
+  // Pobieranie szczegółów raportu
   getById: async (id) => {
     try {
       const response = await api.get(`/reports/${id}`);
@@ -190,7 +229,7 @@ export const reportAPI = {
       throw error;
     }
   },
-  
+
   // Pobieranie szczegółów obszaru
   getAreaById: async (id) => {
     try {
@@ -201,18 +240,7 @@ export const reportAPI = {
       throw error;
     }
   },
-  
-  // Generowanie raportu z oceny
-  generateFromAssessment: async (assessmentId, reportData) => {
-    try {
-      const response = await api.post(`/reports/generate/${assessmentId}`, reportData);
-      return response.data;
-    } catch (error) {
-      console.error(`Błąd podczas generowania raportu z oceny o ID ${assessmentId}:`, error);
-      throw error;
-    }
-  },
-  
+
   // Eksport raportu do PDF
   exportReport: async (id) => {
     try {
@@ -239,8 +267,8 @@ export const companyAPI = {
       throw error;
     }
   },
-  
-  // Pobieranie firmy po ID
+
+  // Pobieranie szczegółów firmy
   getById: async (id) => {
     try {
       const response = await api.get(`/companies/${id}`);
@@ -250,7 +278,7 @@ export const companyAPI = {
       throw error;
     }
   },
-  
+
   // Tworzenie nowej firmy
   create: async (companyData) => {
     try {
@@ -261,8 +289,8 @@ export const companyAPI = {
       throw error;
     }
   },
-  
-  // Aktualizacja istniejącej firmy
+
+  // Aktualizacja firmy
   update: async (id, companyData) => {
     try {
       const response = await api.put(`/companies/${id}`, companyData);
@@ -272,7 +300,7 @@ export const companyAPI = {
       throw error;
     }
   },
-  
+
   // Usuwanie firmy
   delete: async (id) => {
     try {
@@ -280,6 +308,78 @@ export const companyAPI = {
       return response.data;
     } catch (error) {
       console.error(`Błąd podczas usuwania firmy o ID ${id}:`, error);
+      throw error;
+    }
+  }
+};
+
+// Serwis API dla użytkowników
+export const userAPI = {
+  // Pobieranie wszystkich użytkowników
+  getAll: async () => {
+    try {
+      const response = await api.get('/users');
+      return response.data;
+    } catch (error) {
+      console.error('Błąd podczas pobierania użytkowników:', error);
+      throw error;
+    }
+  },
+
+  // Pobieranie szczegółów użytkownika
+  getById: async (id) => {
+    try {
+      const response = await api.get(`/users/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Błąd podczas pobierania użytkownika o ID ${id}:`, error);
+      throw error;
+    }
+  },
+
+  // Aktualizacja użytkownika
+  update: async (id, userData) => {
+    try {
+      const response = await api.put(`/users/${id}`, userData);
+      return response.data;
+    } catch (error) {
+      console.error(`Błąd podczas aktualizacji użytkownika o ID ${id}:`, error);
+      throw error;
+    }
+  },
+
+  // Zmiana hasła użytkownika
+  changePassword: async (id, passwordData) => {
+    try {
+      const response = await api.put(`/users/${id}/password`, passwordData);
+      return response.data;
+    } catch (error) {
+      console.error(`Błąd podczas zmiany hasła użytkownika o ID ${id}:`, error);
+      throw error;
+    }
+  }
+};
+
+// Serwis API dla subskrypcji
+export const subscriptionAPI = {
+  // Pobieranie szczegółów subskrypcji
+  getCurrent: async () => {
+    try {
+      const response = await api.get('/subscriptions/current');
+      return response.data;
+    } catch (error) {
+      console.error('Błąd podczas pobierania subskrypcji:', error);
+      throw error;
+    }
+  },
+
+  // Aktualizacja subskrypcji
+  update: async (subscriptionData) => {
+    try {
+      const response = await api.put('/subscriptions/current', subscriptionData);
+      return response.data;
+    } catch (error) {
+      console.error('Błąd podczas aktualizacji subskrypcji:', error);
       throw error;
     }
   }
