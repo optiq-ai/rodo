@@ -15,7 +15,10 @@ public class Requirement {
     private String text;
 
     @Column(name = "value")
-    private String value; // "TAK", "NIE", "W REALIZACJI", "ND"
+    private String value; // "yes", "no", "partial", "na"
+
+    @Column(name = "status")
+    private String status; // "COMPLETED", "NOT_APPLICABLE", "IN_PROGRESS", "NOT_STARTED"
 
     @Column(name = "comment", length = 1000)
     private String comment;
@@ -29,9 +32,10 @@ public class Requirement {
     }
 
     // Constructor with essential fields
-    public Requirement(String text, String value, String comment) {
+    public Requirement(String text, String value, String status, String comment) {
         this.text = text;
         this.value = value;
+        this.status = status;
         this.comment = comment;
     }
 
@@ -60,6 +64,14 @@ public class Requirement {
         this.value = value;
     }
 
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
     public String getComment() {
         return comment;
     }
@@ -82,6 +94,7 @@ public class Requirement {
                 "id=" + id +
                 ", text='" + text + '\'' +
                 ", value='" + value + '\'' +
+                ", status='" + status + '\'' +
                 ", comment='" + comment + '\'' +
                 ", area=" + (area != null ? area.getId() : null) +
                 '}';

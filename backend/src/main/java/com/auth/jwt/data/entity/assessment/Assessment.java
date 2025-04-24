@@ -24,6 +24,9 @@ public class Assessment {
     @Column(name = "status", nullable = false)
     private String status; // "W TRAKCIE", "ZAKOŃCZONA", "DRAFT"
 
+    @Column(name = "progress")
+    private Integer progress; // 0-100 percentage of completion
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
@@ -41,6 +44,7 @@ public class Assessment {
     public Assessment() {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
+        this.progress = 0;
     }
 
     // Constructor with essential fields
@@ -51,6 +55,7 @@ public class Assessment {
         this.employee = employee;
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
+        this.progress = 0;
     }
 
     // Getters and setters
@@ -84,6 +89,14 @@ public class Assessment {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public Integer getProgress() {
+        return progress;
+    }
+
+    public void setProgress(Integer progress) {
+        this.progress = progress;
     }
 
     public LocalDateTime getCreatedAt() {
@@ -142,6 +155,7 @@ public class Assessment {
                 ", name='" + name + '\'' +
                 ", description='" + description + '\'' +
                 ", status='" + status + '\'' +
+                ", progress=" + progress +
                 ", createdAt=" + createdAt +
                 ", updatedAt=" + updatedAt +
                 ", employee=" + (employee != null ? employee.getId() : null) +
