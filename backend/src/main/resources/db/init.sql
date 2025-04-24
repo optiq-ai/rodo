@@ -68,6 +68,7 @@ CREATE TABLE assessment (
     name VARCHAR(100) NOT NULL,
     description TEXT,
     status VARCHAR(20) NOT NULL,
+    progress INTEGER DEFAULT 0,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     employee_id INTEGER NOT NULL,
@@ -99,6 +100,7 @@ CREATE TABLE requirement (
     id SERIAL PRIMARY KEY,
     text TEXT NOT NULL,
     value VARCHAR(20),
+    status VARCHAR(20),
     comment TEXT,
     area_id INTEGER NOT NULL,
     FOREIGN KEY (area_id) REFERENCES area(id) ON DELETE CASCADE
@@ -171,8 +173,8 @@ INSERT INTO subscription (plan, status, next_billing_date, payment_method, emplo
 VALUES ('basic', 'active', CURRENT_DATE + INTERVAL '30 DAY', 'card', 2);
 
 -- Dodanie przykładowej oceny RODO
-INSERT INTO assessment (name, description, status, employee_id)
-VALUES ('Ocena zgodności z RODO', 'Pierwsza ocena zgodności z RODO', 'W TRAKCIE', 2);
+INSERT INTO assessment (name, description, status, progress, employee_id)
+VALUES ('Ocena zgodności z RODO', 'Pierwsza ocena zgodności z RODO', 'W TRAKCIE', 40, 2);
 
 -- Dodanie przykładowych rozdziałów
 INSERT INTO chapter (name, description, assessment_id)
@@ -192,20 +194,20 @@ INSERT INTO area (name, description, score, comment, chapter_id)
 VALUES ('Prawo dostępu do danych', 'Ocena realizacji prawa dostępu do danych', 'NEGATYWNA', 'Brak procedury realizacji prawa dostępu', 2);
 
 -- Dodanie przykładowych wymagań
-INSERT INTO requirement (text, value, comment, area_id)
-VALUES ('Czy dane osobowe są przetwarzane zgodnie z zasadą legalności?', 'ZGODNY', 'Wszystkie dane są przetwarzane na podstawie zgody lub innej podstawy prawnej', 1);
+INSERT INTO requirement (text, value, status, comment, area_id)
+VALUES ('Czy dane osobowe są przetwarzane zgodnie z zasadą legalności?', 'ZGODNY', 'COMPLETED', 'Wszystkie dane są przetwarzane na podstawie zgody lub innej podstawy prawnej', 1);
 
-INSERT INTO requirement (text, value, comment, area_id)
-VALUES ('Czy dane osobowe są przetwarzane zgodnie z zasadą rzetelności?', 'ZGODNY', 'Procesy przetwarzania są transparentne', 1);
+INSERT INTO requirement (text, value, status, comment, area_id)
+VALUES ('Czy dane osobowe są przetwarzane zgodnie z zasadą rzetelności?', 'ZGODNY', 'COMPLETED', 'Procesy przetwarzania są transparentne', 1);
 
-INSERT INTO requirement (text, value, comment, area_id)
-VALUES ('Czy przetwarzane są tylko dane niezbędne do realizacji celu?', 'CZĘŚCIOWO ZGODNY', 'Niektóre dane nie są niezbędne', 2);
+INSERT INTO requirement (text, value, status, comment, area_id)
+VALUES ('Czy przetwarzane są tylko dane niezbędne do realizacji celu?', 'CZĘŚCIOWO ZGODNY', 'IN_PROGRESS', 'Niektóre dane nie są niezbędne', 2);
 
-INSERT INTO requirement (text, value, comment, area_id)
-VALUES ('Czy dane są usuwane po osiągnięciu celu przetwarzania?', 'NIEZGODNY', 'Brak procedury usuwania danych', 2);
+INSERT INTO requirement (text, value, status, comment, area_id)
+VALUES ('Czy dane są usuwane po osiągnięciu celu przetwarzania?', 'NIEZGODNY', 'NOT_APPLICABLE', 'Brak procedury usuwania danych', 2);
 
-INSERT INTO requirement (text, value, comment, area_id)
-VALUES ('Czy organizacja posiada procedurę realizacji prawa dostępu do danych?', 'NIEZGODNY', 'Brak procedury', 3);
+INSERT INTO requirement (text, value, status, comment, area_id)
+VALUES ('Czy organizacja posiada procedurę realizacji prawa dostępu do danych?', 'NIEZGODNY', 'NOT_APPLICABLE', 'Brak procedury', 3);
 
 -- Dodanie przykładowego raportu
 INSERT INTO report (name, description, report_type, employee_id)
@@ -232,8 +234,8 @@ INSERT INTO recommendation (text, priority, status, due_date, report_id)
 VALUES ('Przeszkolić pracowników w zakresie zasad przetwarzania danych osobowych', 'low', 'in_progress', CURRENT_DATE + INTERVAL '60 DAY', 1);
 
 -- Dodanie przykładowej oceny RODO (zakończonej)
-INSERT INTO assessment (name, description, status, employee_id)
-VALUES ('Ocena zgodności z RODO - dział HR', 'Ocena zgodności z RODO dla działu HR', 'ZAKOŃCZONA', 2);
+INSERT INTO assessment (name, description, status, progress, employee_id)
+VALUES ('Ocena zgodności z RODO - dział HR', 'Ocena zgodności z RODO dla działu HR', 'ZAKOŃCZONA', 100, 2);
 
 -- Dodanie przykładowych rozdziałów
 INSERT INTO chapter (name, description, assessment_id)
@@ -244,8 +246,8 @@ INSERT INTO area (name, description, score, comment, chapter_id)
 VALUES ('Zgody pracowników', 'Ocena zgód pracowników na przetwarzanie danych', 'POZYTYWNA', 'Wszystkie zgody są prawidłowo zbierane i przechowywane', 3);
 
 -- Dodanie przykładowych wymagań
-INSERT INTO requirement (text, value, comment, area_id)
-VALUES ('Czy zgody pracowników są dobrowolne?', 'ZGODNY', 'Zgody są dobrowolne i można je wycofać', 4);
+INSERT INTO requirement (text, value, status, comment, area_id)
+VALUES ('Czy zgody pracowników są dobrowolne?', 'ZGODNY', 'COMPLETED', 'Zgody są dobrowolne i można je wycofać', 4);
 
 -- Dodanie przykładowego raportu (inny typ)
 INSERT INTO report (name, description, report_type, employee_id)
