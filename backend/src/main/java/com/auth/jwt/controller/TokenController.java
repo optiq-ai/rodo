@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Iterator;
 
 @RestController
 @RequestMapping("/verify-token")
@@ -63,13 +64,20 @@ public class TokenController {
         if (employee != null) {
             Map<String, Object> response = new HashMap<>();
             response.put("valid", true);
-            response.put("username", employee.getLogin());
+            response.put("username", employee.getUserName());
             response.put("email", employee.getEmail());
             
             // Extract role information if available
             String role = "USER";
             if (employee.getRoles() != null && !employee.getRoles().isEmpty()) {
-                role = employee.getRoles().get(0).getName();
+                // Use iterator to get the first role instead of indexed access
+                Iterator<?> iterator = employee.getRoles().iterator();
+                if (iterator.hasNext()) {
+                    Object roleObj = iterator.next();
+                    if (roleObj instanceof com.auth.jwt.data.entity.employee.Role) {
+                        role = ((com.auth.jwt.data.entity.employee.Role) roleObj).getName();
+                    }
+                }
             }
             response.put("role", role);
             
