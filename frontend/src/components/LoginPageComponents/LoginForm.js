@@ -18,19 +18,23 @@ const LoginForm = () => {
     
     try {
       console.log("Logowanie dla użytkownika:", userName);
+      // Używamy funkcji login z kontekstu uwierzytelniania
       const result = await login({
         userName,
-        password, // Pass password as a string, not an array of characters
+        password
       });
       
-      if (result.success) {
+      // Sprawdzamy wynik logowania
+      if (result && result.success) {
+        // Przekierowanie do dashboardu po udanym logowaniu
         navigate("/dashboard");
       } else {
-        setError(result.error || "Invalid username or password");
+        // Wyświetlenie błędu, jeśli logowanie nie powiodło się
+        setError(result?.error || "Nieprawidłowa nazwa użytkownika lub hasło");
       }
     } catch (error) {
       console.error("Error logging in:", error);
-      setError("An unexpected error occurred. Please try again.");
+      setError("Wystąpił nieoczekiwany błąd. Spróbuj ponownie.");
     } finally {
       setIsLoading(false);
     }
@@ -63,7 +67,7 @@ const LoginForm = () => {
         />
       </div>
       <button type="submit" className="login-button" disabled={isLoading}>
-        {isLoading ? "Logging in..." : "Login"}
+        {isLoading ? "Logowanie..." : "Login"}
       </button>
     </form>
   );
