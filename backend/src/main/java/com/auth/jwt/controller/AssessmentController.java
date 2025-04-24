@@ -54,23 +54,6 @@ public class AssessmentController {
     }
 
     /**
-     * Get the current authenticated user from token parameter
-     * @param token JWT token
-     * @return Employee object or null
-     */
-    private Employee getUserFromToken(String token) {
-        try {
-            Authentication authentication = userAuthProviderParam.validateToken(token);
-            if (authentication != null && authentication.getName() != null) {
-                return employeeRepository.findByLogin(authentication.getName());
-            }
-        } catch (Exception e) {
-            // Token validation failed
-        }
-        return null;
-    }
-
-    /**
      * Get the current authenticated user
      * @return Employee object or null
      */
@@ -84,12 +67,13 @@ public class AssessmentController {
 
     /**
      * Get all assessments for the current user
-     * @param token JWT token (optional)
+     * @param token JWT token (optional, not used directly as authentication is handled by JwtAuthFilter)
      * @return List of assessments
      */
     @GetMapping
     public ResponseEntity<?> getAllAssessments(@RequestParam(required = false) String token) {
-        Employee employee = token != null ? getUserFromToken(token) : getCurrentUser();
+        // Use security context that was set by JwtAuthFilter
+        Employee employee = getCurrentUser();
         if (employee == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(createErrorResponse("Nieautoryzowany dostęp"));
@@ -105,12 +89,13 @@ public class AssessmentController {
 
     /**
      * Get assessment summary
-     * @param token JWT token (optional)
+     * @param token JWT token (optional, not used directly as authentication is handled by JwtAuthFilter)
      * @return Summary of assessments
      */
     @GetMapping("/summary")
     public ResponseEntity<?> getAssessmentSummary(@RequestParam(required = false) String token) {
-        Employee employee = token != null ? getUserFromToken(token) : getCurrentUser();
+        // Use security context that was set by JwtAuthFilter
+        Employee employee = getCurrentUser();
         if (employee == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(createErrorResponse("Nieautoryzowany dostęp"));
@@ -164,12 +149,13 @@ public class AssessmentController {
     /**
      * Get assessment by ID
      * @param id Assessment ID
-     * @param token JWT token (optional)
+     * @param token JWT token (optional, not used directly as authentication is handled by JwtAuthFilter)
      * @return Assessment details
      */
     @GetMapping("/{id}")
     public ResponseEntity<?> getAssessmentById(@PathVariable Long id, @RequestParam(required = false) String token) {
-        Employee employee = token != null ? getUserFromToken(token) : getCurrentUser();
+        // Use security context that was set by JwtAuthFilter
+        Employee employee = getCurrentUser();
         if (employee == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(createErrorResponse("Nieautoryzowany dostęp"));
@@ -194,12 +180,13 @@ public class AssessmentController {
 
     /**
      * Get assessment template
-     * @param token JWT token (optional)
+     * @param token JWT token (optional, not used directly as authentication is handled by JwtAuthFilter)
      * @return Assessment template
      */
     @GetMapping("/template")
     public ResponseEntity<?> getAssessmentTemplate(@RequestParam(required = false) String token) {
-        Employee employee = token != null ? getUserFromToken(token) : getCurrentUser();
+        // Use security context that was set by JwtAuthFilter
+        Employee employee = getCurrentUser();
         if (employee == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(createErrorResponse("Nieautoryzowany dostęp"));
@@ -225,13 +212,14 @@ public class AssessmentController {
     /**
      * Create a new assessment
      * @param assessmentData Assessment data
-     * @param token JWT token (optional)
+     * @param token JWT token (optional, not used directly as authentication is handled by JwtAuthFilter)
      * @return Created assessment ID
      */
     @PostMapping
     public ResponseEntity<?> createAssessment(@Valid @RequestBody Map<String, Object> assessmentData, 
                                              @RequestParam(required = false) String token) {
-        Employee employee = token != null ? getUserFromToken(token) : getCurrentUser();
+        // Use security context that was set by JwtAuthFilter
+        Employee employee = getCurrentUser();
         if (employee == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(createErrorResponse("Nieautoryzowany dostęp"));
@@ -268,14 +256,15 @@ public class AssessmentController {
      * Update an existing assessment
      * @param id Assessment ID
      * @param assessmentData Assessment data
-     * @param token JWT token (optional)
+     * @param token JWT token (optional, not used directly as authentication is handled by JwtAuthFilter)
      * @return Success message
      */
     @PutMapping("/{id}")
     public ResponseEntity<?> updateAssessment(@PathVariable Long id, 
                                              @Valid @RequestBody Map<String, Object> assessmentData,
                                              @RequestParam(required = false) String token) {
-        Employee employee = token != null ? getUserFromToken(token) : getCurrentUser();
+        // Use security context that was set by JwtAuthFilter
+        Employee employee = getCurrentUser();
         if (employee == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(createErrorResponse("Nieautoryzowany dostęp"));
@@ -309,12 +298,13 @@ public class AssessmentController {
     /**
      * Delete an assessment
      * @param id Assessment ID
-     * @param token JWT token (optional)
+     * @param token JWT token (optional, not used directly as authentication is handled by JwtAuthFilter)
      * @return Success message
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteAssessment(@PathVariable Long id, @RequestParam(required = false) String token) {
-        Employee employee = token != null ? getUserFromToken(token) : getCurrentUser();
+        // Use security context that was set by JwtAuthFilter
+        Employee employee = getCurrentUser();
         if (employee == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(createErrorResponse("Nieautoryzowany dostęp"));
@@ -346,12 +336,13 @@ public class AssessmentController {
     /**
      * Export assessment to JSON
      * @param id Assessment ID
-     * @param token JWT token (optional)
+     * @param token JWT token (optional, not used directly as authentication is handled by JwtAuthFilter)
      * @return Assessment JSON
      */
     @GetMapping("/{id}/export")
     public ResponseEntity<?> exportAssessment(@PathVariable Long id, @RequestParam(required = false) String token) {
-        Employee employee = token != null ? getUserFromToken(token) : getCurrentUser();
+        // Use security context that was set by JwtAuthFilter
+        Employee employee = getCurrentUser();
         if (employee == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(createErrorResponse("Nieautoryzowany dostęp"));
