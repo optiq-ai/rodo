@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Form, Button, Alert, Tab, Nav, ProgressBar } from 'react-bootstrap';
+import { Container, Row, Col, Card, Form, Button, Alert, ProgressBar } from 'react-bootstrap';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import RadioButtonAssessmentForm from '../components/assessment/RadioButtonAssessmentForm';
@@ -480,178 +480,98 @@ const Assessment = () => {
   globalAreaIndex += currentAreaIndex;
 
   return (
-    <Container fluid className="my-4">
-      <Row>
-        <Col md={12} lg={9}>
-          <Card className="mb-4">
-            <Card.Header className="bg-primary text-white d-flex justify-content-between align-items-center">
-              <h3 className="mb-0">Formularz oceny RODO</h3>
-              <div>
-                <span className={`badge bg-${assessment.status === 'ZAKOŃCZONA' ? 'success' : assessment.status === 'W TRAKCIE' ? 'warning' : 'secondary'} ms-2`}>
-                  {assessment.status}
-                </span>
-              </div>
-            </Card.Header>
-            
-            <Card.Body>
-              {error && <Alert variant="danger">{error}</Alert>}
-              {saveSuccess && <Alert variant="success">Ocena została zapisana pomyślnie!</Alert>}
-              
-              <Form className="mb-4">
-                <Row>
-                  <Col md={6}>
-                    <Form.Group className="mb-3">
-                      <Form.Label>Nazwa oceny</Form.Label>
-                      <Form.Control
-                        type="text"
-                        name="name"
-                        value={assessment.name}
-                        onChange={handleInputChange}
-                        placeholder="Wprowadź nazwę oceny"
-                        required
-                      />
-                    </Form.Group>
-                  </Col>
-                  
-                  <Col md={6}>
-                    <Form.Group className="mb-3">
-                      <Form.Label>Status</Form.Label>
-                      <div className="form-control bg-light">
-                        {assessment.status}
-                      </div>
-                    </Form.Group>
-                  </Col>
-                </Row>
-                
+    <Container className="my-4">
+      <Card className="mb-4">
+        <Card.Header className="bg-primary text-white d-flex justify-content-between align-items-center">
+          <h3 className="mb-0">Formularz oceny RODO</h3>
+          <div>
+            <span className={`badge bg-${assessment.status === 'ZAKOŃCZONA' ? 'success' : assessment.status === 'W TRAKCIE' ? 'warning' : 'secondary'} ms-2`}>
+              {assessment.status}
+            </span>
+          </div>
+        </Card.Header>
+        
+        <Card.Body>
+          {error && <Alert variant="danger">{error}</Alert>}
+          {saveSuccess && <Alert variant="success">Ocena została zapisana pomyślnie!</Alert>}
+          
+          <Form className="mb-4">
+            <Row>
+              <Col md={6}>
                 <Form.Group className="mb-3">
-                  <Form.Label>Opis</Form.Label>
+                  <Form.Label>Nazwa oceny</Form.Label>
                   <Form.Control
-                    as="textarea"
-                    rows={2}
-                    name="description"
-                    value={assessment.description}
+                    type="text"
+                    name="name"
+                    value={assessment.name}
                     onChange={handleInputChange}
-                    placeholder="Wprowadź opis oceny (opcjonalnie)"
+                    placeholder="Wprowadź nazwę oceny"
+                    required
                   />
                 </Form.Group>
-              </Form>
+              </Col>
               
-              <div className="mb-4">
-                <div className="d-flex justify-content-between align-items-center mb-2">
-                  <h5 className="mb-0">Ogólny postęp oceny:</h5>
-                  <span className="badge bg-primary">{overallProgress}%</span>
-                </div>
-                <ProgressBar 
-                  now={overallProgress} 
-                  variant={overallProgress < 30 ? "danger" : overallProgress < 70 ? "warning" : "success"} 
-                  animated 
-                  style={{height: '15px'}}
-                />
-                <div className="d-flex justify-content-between mt-1">
-                  <small className="text-muted">Obszar {globalAreaIndex + 1} z {totalAreas}</small>
-                  <small className="text-muted">Rozdział: {currentChapter.name}</small>
-                </div>
-              </div>
-              
-              <div className="mb-4">
-                <h4>Rozdział: {currentChapter.name}</h4>
-                <p className="text-muted">{currentChapter.description}</p>
-              </div>
-              
-              <RadioButtonAssessmentForm
-                area={currentArea}
-                chapterIndex={currentChapterIndex}
-                areaIndex={currentAreaIndex}
-                handleRequirementChange={handleRequirementChange}
-                handleAreaScoreChange={handleAreaScoreChange}
-                handleAreaCommentChange={handleAreaCommentChange}
-                totalAreas={currentChapter.areas.length}
-                currentAreaIndex={currentAreaIndex}
-                onNextArea={handleNextArea}
-                onPrevArea={handlePrevArea}
-                onSave={handleSave}
-                onExport={handleExport}
-              />
-            </Card.Body>
-          </Card>
-        </Col>
-        
-        <Col md={12} lg={3}>
-          <Card className="mb-4 sticky-top" style={{top: '20px'}}>
-            <Card.Header className="bg-primary text-white">
-              <h5 className="mb-0">Nawigacja</h5>
-            </Card.Header>
-            <Card.Body>
-              <div className="mb-3">
-                <Button 
-                  variant="outline-primary" 
-                  className="w-100 mb-2"
-                  onClick={handleSave}
-                >
-                  💾 Zapisz ocenę
-                </Button>
-                
-                <Button 
-                  variant="outline-success" 
-                  className="w-100"
-                  onClick={handleExport}
-                >
-                  📤 Eksportuj do PDF
-                </Button>
-              </div>
-              
-              <h6 className="mb-2">Rozdziały i obszary:</h6>
-              <div className="chapters-nav">
-                {assessment.chapters.map((chapter, chIdx) => (
-                  <div key={chapter.id} className="mb-3">
-                    <div 
-                      className={`chapter-title ${currentChapterIndex === chIdx ? 'fw-bold text-primary' : ''}`}
-                      style={{cursor: 'pointer'}}
-                      onClick={() => {
-                        setCurrentChapterIndex(chIdx);
-                        setCurrentAreaIndex(0);
-                      }}
-                    >
-                      {chapter.name}
-                    </div>
-                    
-                    <ul className="list-unstyled ms-3 mt-1">
-                      {chapter.areas.map((area, areaIdx) => (
-                        <li 
-                          key={area.id} 
-                          className={`area-item ${currentChapterIndex === chIdx && currentAreaIndex === areaIdx ? 'fw-bold text-primary' : ''}`}
-                          style={{cursor: 'pointer'}}
-                          onClick={() => {
-                            setCurrentChapterIndex(chIdx);
-                            setCurrentAreaIndex(areaIdx);
-                          }}
-                        >
-                          <small>
-                            {area.name}
-                            {area.score && (
-                              <span 
-                                className={`ms-2 badge ${
-                                  area.score === 'POZYTYWNA' ? 'bg-success' : 
-                                  area.score === 'ZASTRZEŻENIA' ? 'bg-warning text-dark' : 
-                                  area.score === 'NEGATYWNA' ? 'bg-danger' : 
-                                  area.score === 'W REALIZACJI' ? 'bg-info' : 
-                                  'bg-secondary'
-                                }`}
-                              >
-                                {area.score}
-                              </span>
-                            )}
-                          </small>
-                        </li>
-                      ))}
-                    </ul>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Status</Form.Label>
+                  <div className="form-control bg-light">
+                    {assessment.status}
                   </div>
-                ))}
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+                </Form.Group>
+              </Col>
+            </Row>
+            
+            <Form.Group className="mb-3">
+              <Form.Label>Opis</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={2}
+                name="description"
+                value={assessment.description}
+                onChange={handleInputChange}
+                placeholder="Wprowadź opis oceny (opcjonalnie)"
+              />
+            </Form.Group>
+          </Form>
+          
+          <div className="mb-4">
+            <div className="d-flex justify-content-between align-items-center mb-2">
+              <h5 className="mb-0">Ogólny postęp oceny:</h5>
+              <span className="badge bg-primary">{overallProgress}%</span>
+            </div>
+            <ProgressBar 
+              now={overallProgress} 
+              variant={overallProgress < 30 ? "danger" : overallProgress < 70 ? "warning" : "success"} 
+              animated 
+              style={{height: '15px'}}
+            />
+            <div className="d-flex justify-content-between mt-1">
+              <small className="text-muted">Obszar {globalAreaIndex + 1} z {totalAreas}</small>
+              <small className="text-muted">Rozdział: {currentChapter.name}</small>
+            </div>
+          </div>
+          
+          <div className="mb-4">
+            <h4>Rozdział: {currentChapter.name}</h4>
+            <p className="text-muted">{currentChapter.description}</p>
+          </div>
+          
+          <RadioButtonAssessmentForm
+            area={currentArea}
+            chapterIndex={currentChapterIndex}
+            areaIndex={currentAreaIndex}
+            handleRequirementChange={handleRequirementChange}
+            handleAreaScoreChange={handleAreaScoreChange}
+            handleAreaCommentChange={handleAreaCommentChange}
+            totalAreas={currentChapter.areas.length}
+            currentAreaIndex={currentAreaIndex}
+            onNextArea={handleNextArea}
+            onPrevArea={handlePrevArea}
+            onSave={handleSave}
+            onExport={handleExport}
+          />
+        </Card.Body>
+      </Card>
     </Container>
   );
 };

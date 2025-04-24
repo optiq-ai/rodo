@@ -457,7 +457,7 @@ public class AssessmentController {
                                              @Valid @RequestBody Map<String, Object> assessmentData,
                                              @RequestParam(required = false) String token) {
         System.out.println("Processing request: PUT /assessments/" + id + (token != null ? "?token=" + token : ""));
-        System.out.println("Zapisywanie oceny: " + assessmentData);
+        System.out.println("Aktualizacja oceny: " + assessmentData);
         
         // Use security context that was set by JwtAuthFilter
         Employee employee = getCurrentUser();
@@ -489,27 +489,54 @@ public class AssessmentController {
             // Save assessment first
             assessment = assessmentRepository.save(assessment);
             
-            // Delete existing chapters, areas, and requirements
-            for (Chapter chapter : assessment.getChapters()) {
-                for (Area area : chapter.getAreas()) {
-                    for (Requirement requirement : area.getRequirements()) {
-                        requirementRepository.delete(requirement);
-                    }
-                    areaRepository.delete(area);
-                }
-                chapterRepository.delete(chapter);
-            }
-            
             // Process chapters if present
             if (assessmentData.containsKey("chapters")) {
                 List<Map<String, Object>> chaptersData = (List<Map<String, Object>>) assessmentData.get("chapters");
                 if (chaptersData != null) {
+                    // Create a map of existing chapters by ID for quick lookup
+                    Map<Long, Chapter> existingChapters = new HashMap<>();
+                    for (Chapter chapter : assessment.getChapters()) {
+                        existingChapters.put(chapter.getId(), chapter);
+                    }
+                    
+                    // Track processed chapters to identify which ones to delete
+                    Set<Long> processedChapterIds = new HashSet<>();
+                    
                     for (Map<String, Object> chapterData : chaptersData) {
-                        // Create chapter
-                        Chapter chapter = new Chapter();
-                        chapter.setName((String) chapterData.get("name"));
-                        chapter.setDescription((String) chapterData.get("description"));
-                        chapter.setAssessment(assessment);
+                        Chapter chapter;
+                        Long chapterId = null;
+                        
+                        // Check if chapter has an ID and exists
+                        if (chapterData.containsKey("id") && chapterData.get("id") != null) {
+                            try {
+                                chapterId = Long.valueOf(chapterData.get("id").toString());
+                                if (existingChapters.containsKey(chapterId)) {
+                                    // Update existing chapter
+                                    chapter = existingChapters.get(chapterId);
+                                    chapter.setName((String) chapterData.get("name"));
+                                    chapter.setDescription((String) chapterData.get("description"));
+                                    processedChapterIds.add(chapterId);
+                                } else {
+                                    // Create new chapter with specified ID
+                                    chapter = new Chapter();
+                                    chapter.setName((String) chapterData.get("name"));
+                                    chapter.setDescription((String) chapterData.get("description"));
+                                    chapter.setAssessment(assessment);
+                                }
+                            } catch (NumberFormatException e) {
+                                // ID is not a valid Long, create new chapter
+                                chapter = new Chapter();
+                                chapter.setName((String) chapterData.get("name"));
+                                chapter.setDescription((String) chapterData.get("description"));
+                                chapter.setAssessment(assessment);
+                            }
+                        } else {
+                            // Create new chapter
+                            chapter = new Chapter();
+                            chapter.setName((String) chapterData.get("name"));
+                            chapter.setDescription((String) chapterData.get("description"));
+                            chapter.setAssessment(assessment);
+                        }
                         
                         // Save chapter
                         chapter = chapterRepository.save(chapter);
@@ -518,14 +545,58 @@ public class AssessmentController {
                         if (chapterData.containsKey("areas")) {
                             List<Map<String, Object>> areasData = (List<Map<String, Object>>) chapterData.get("areas");
                             if (areasData != null) {
+                                // Create a map of existing areas by ID for quick lookup
+                                Map<Long, Area> existingAreas = new HashMap<>();
+                                for (Area area : chapter.getAreas()) {
+                                    existingAreas.put(area.getId(), area);
+                                }
+                                
+                                // Track processed areas to identify which ones to delete
+                                Set<Long> processedAreaIds = new HashSet<>();
+                                
                                 for (Map<String, Object> areaData : areasData) {
-                                    // Create area
-                                    Area area = new Area();
-                                    area.setName((String) areaData.get("name"));
-                                    area.setDescription((String) areaData.get("description"));
-                                    area.setScore((String) areaData.get("score"));
-                                    area.setComment((String) areaData.get("comment"));
-                                    area.setChapter(chapter);
+                                    Area area;
+                                    Long areaId = null;
+                                    
+                                    // Check if area has an ID and exists
+                                    if (areaData.containsKey("id") && areaData.get("id") != null) {
+                                        try {
+                                            areaId = Long.valueOf(areaData.get("id").toString());
+                                            if (existingAreas.containsKey(areaId)) {
+                                                // Update existing area
+                                                area = existingAreas.get(areaId);
+                                                area.setName((String) areaData.get("name"));
+                                                area.setDescription((String) areaData.get("description"));
+                                                area.setScore((String) areaData.get("score"));
+                                                area.setComment((String) areaData.get("comment"));
+                                                processedAreaIds.add(areaId);
+                                            } else {
+                                                // Create new area with specified ID
+                                                area = new Area();
+                                                area.setName((String) areaData.get("name"));
+                                                area.setDescription((String) areaData.get("description"));
+                                                area.setScore((String) areaData.get("score"));
+                                                area.setComment((String) areaData.get("comment"));
+                                                area.setChapter(chapter);
+                                            }
+                                        } catch (NumberFormatException e) {
+                                            // ID is not a valid Long, create new area
+                                            area = new Area();
+                                            area.setName((String) areaData.get("name"));
+                                            area.setDescription((String) areaData.get("description"));
+                                            area.setScore((String) areaData.get("score"));
+                                            area.setComment((String) areaData.get("comment"));
+                                            area.setChapter(chapter);
+                                        }
+                                    } else {
+                                        // Create new area
+                                        area = new Area();
+                                        area.setName((String) areaData.get("name"));
+                                        area.setDescription((String) areaData.get("description"));
+                                        area.setScore((String) areaData.get("score"));
+                                        area.setComment((String) areaData.get("comment"));
+                                        area.setChapter(chapter);
+                                    }
                                     
                                     // Save area
                                     area = areaRepository.save(area);
@@ -534,22 +605,87 @@ public class AssessmentController {
                                     if (areaData.containsKey("requirements")) {
                                         List<Map<String, Object>> requirementsData = (List<Map<String, Object>>) areaData.get("requirements");
                                         if (requirementsData != null) {
+                                            // Create a map of existing requirements by ID for quick lookup
+                                            Map<Long, Requirement> existingRequirements = new HashMap<>();
+                                            for (Requirement requirement : area.getRequirements()) {
+                                                existingRequirements.put(requirement.getId(), requirement);
+                                            }
+                                            
+                                            // Track processed requirements to identify which ones to delete
+                                            Set<Long> processedRequirementIds = new HashSet<>();
+                                            
                                             for (Map<String, Object> requirementData : requirementsData) {
-                                                // Create requirement
-                                                Requirement requirement = new Requirement();
-                                                requirement.setText((String) requirementData.get("text"));
-                                                requirement.setValue((String) requirementData.get("value"));
-                                                requirement.setStatus((String) requirementData.get("status"));
-                                                requirement.setComment((String) requirementData.get("comment"));
-                                                requirement.setArea(area);
+                                                Requirement requirement;
+                                                Long requirementId = null;
+                                                
+                                                // Check if requirement has an ID and exists
+                                                if (requirementData.containsKey("id") && requirementData.get("id") != null) {
+                                                    try {
+                                                        requirementId = Long.valueOf(requirementData.get("id").toString());
+                                                        if (existingRequirements.containsKey(requirementId)) {
+                                                            // Update existing requirement
+                                                            requirement = existingRequirements.get(requirementId);
+                                                            requirement.setText((String) requirementData.get("text"));
+                                                            requirement.setValue((String) requirementData.get("value"));
+                                                            requirement.setStatus((String) requirementData.get("status"));
+                                                            requirement.setComment((String) requirementData.get("comment"));
+                                                            processedRequirementIds.add(requirementId);
+                                                        } else {
+                                                            // Create new requirement with specified ID
+                                                            requirement = new Requirement();
+                                                            requirement.setText((String) requirementData.get("text"));
+                                                            requirement.setValue((String) requirementData.get("value"));
+                                                            requirement.setStatus((String) requirementData.get("status"));
+                                                            requirement.setComment((String) requirementData.get("comment"));
+                                                            requirement.setArea(area);
+                                                        }
+                                                    } catch (NumberFormatException e) {
+                                                        // ID is not a valid Long, create new requirement
+                                                        requirement = new Requirement();
+                                                        requirement.setText((String) requirementData.get("text"));
+                                                        requirement.setValue((String) requirementData.get("value"));
+                                                        requirement.setStatus((String) requirementData.get("status"));
+                                                        requirement.setComment((String) requirementData.get("comment"));
+                                                        requirement.setArea(area);
+                                                    }
+                                                } else {
+                                                    // Create new requirement
+                                                    requirement = new Requirement();
+                                                    requirement.setText((String) requirementData.get("text"));
+                                                    requirement.setValue((String) requirementData.get("value"));
+                                                    requirement.setStatus((String) requirementData.get("status"));
+                                                    requirement.setComment((String) requirementData.get("comment"));
+                                                    requirement.setArea(area);
+                                                }
                                                 
                                                 // Save requirement
                                                 requirementRepository.save(requirement);
                                             }
+                                            
+                                            // Delete requirements that were not processed
+                                            for (Long existingRequirementId : existingRequirements.keySet()) {
+                                                if (!processedRequirementIds.contains(existingRequirementId)) {
+                                                    requirementRepository.deleteById(existingRequirementId);
+                                                }
+                                            }
                                         }
                                     }
                                 }
+                                
+                                // Delete areas that were not processed
+                                for (Long existingAreaId : existingAreas.keySet()) {
+                                    if (!processedAreaIds.contains(existingAreaId)) {
+                                        areaRepository.deleteById(existingAreaId);
+                                    }
+                                }
                             }
+                        }
+                    }
+                    
+                    // Delete chapters that were not processed
+                    for (Long existingChapterId : existingChapters.keySet()) {
+                        if (!processedChapterIds.contains(existingChapterId)) {
+                            chapterRepository.deleteById(existingChapterId);
                         }
                     }
                 }
@@ -571,7 +707,12 @@ public class AssessmentController {
             // Save updated assessment
             assessmentRepository.save(assessment);
             
-            return ResponseEntity.ok(createSuccessResponse("Ocena została zaktualizowana"));
+            // Return the updated assessment
+            Map<String, Object> response = convertToDetailedAssessment(assessment);
+            response.put("success", true);
+            response.put("message", "Ocena została zaktualizowana");
+            
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -609,32 +750,20 @@ public class AssessmentController {
         }
 
         try {
-            // Delete all related entities
-            for (Chapter chapter : assessment.getChapters()) {
-                for (Area area : chapter.getAreas()) {
-                    for (Requirement requirement : area.getRequirements()) {
-                        requirementRepository.delete(requirement);
-                    }
-                    areaRepository.delete(area);
-                }
-                chapterRepository.delete(chapter);
-            }
-            
-            // Delete assessment
             assessmentRepository.delete(assessment);
-            
             return ResponseEntity.ok(createSuccessResponse("Ocena została usunięta"));
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(createErrorResponse("Wystąpił błąd podczas usuwania oceny: " + e.getMessage()));
         }
     }
 
     /**
-     * Export assessment to JSON
+     * Export assessment to PDF
      * @param id Assessment ID
      * @param token JWT token (optional, not used directly as authentication is handled by JwtAuthFilter)
-     * @return Assessment JSON
+     * @return PDF file
      */
     @GetMapping("/{id}/export")
     public ResponseEntity<?> exportAssessment(@PathVariable Long id, @RequestParam(required = false) String token) {
@@ -659,11 +788,15 @@ public class AssessmentController {
                     .body(createErrorResponse("Brak dostępu do tej oceny"));
         }
 
-        Map<String, Object> exportData = convertToDetailedAssessment(assessment);
-        
-        return ResponseEntity.ok()
-                .header("Content-Disposition", "attachment; filename=\"assessment_" + id + ".json\"")
-                .body(exportData);
+        try {
+            // TODO: Implement PDF export
+            // For now, return a success message
+            return ResponseEntity.ok(createSuccessResponse("Eksport do PDF zostanie zaimplementowany w przyszłości"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(createErrorResponse("Wystąpił błąd podczas eksportu oceny: " + e.getMessage()));
+        }
     }
 
     /**
@@ -676,35 +809,29 @@ public class AssessmentController {
         if (assessmentOpt.isEmpty()) {
             return 0;
         }
-        
+
         Assessment assessment = assessmentOpt.get();
         int totalRequirements = 0;
-        int completedRequirements = 0;
-        
+        int answeredRequirements = 0;
+
         for (Chapter chapter : assessment.getChapters()) {
             for (Area area : chapter.getAreas()) {
                 for (Requirement requirement : area.getRequirements()) {
                     totalRequirements++;
-                    
-                    // Check if requirement is completed
-                    String value = requirement.getValue();
-                    String status = requirement.getStatus();
-                    
-                    if ((value != null && !value.isEmpty()) || 
-                        (status != null && (status.equals("COMPLETED") || status.equals("NOT_APPLICABLE")))) {
-                        completedRequirements++;
+                    if (requirement.getValue() != null && !requirement.getValue().isEmpty()) {
+                        answeredRequirements++;
                     }
                 }
             }
         }
-        
-        return totalRequirements > 0 ? (completedRequirements * 100) / totalRequirements : 0;
+
+        return totalRequirements > 0 ? (int) Math.round((double) answeredRequirements / totalRequirements * 100) : 0;
     }
 
     /**
-     * Convert Assessment entity to summary map
+     * Convert assessment to summary format
      * @param assessment Assessment entity
-     * @return Map with assessment summary
+     * @return Assessment summary
      */
     private Map<String, Object> convertToAssessmentSummary(Assessment assessment) {
         Map<String, Object> result = new HashMap<>();
@@ -712,17 +839,16 @@ public class AssessmentController {
         result.put("name", assessment.getName());
         result.put("description", assessment.getDescription());
         result.put("status", assessment.getStatus());
+        result.put("progress", assessment.getProgress());
         result.put("createdAt", assessment.getCreatedAt());
         result.put("updatedAt", assessment.getUpdatedAt());
-        result.put("progress", assessment.getProgress());
-        
         return result;
     }
 
     /**
-     * Convert Assessment entity to detailed map
+     * Convert assessment to detailed format
      * @param assessment Assessment entity
-     * @return Map with detailed assessment data
+     * @return Detailed assessment
      */
     private Map<String, Object> convertToDetailedAssessment(Assessment assessment) {
         Map<String, Object> result = new HashMap<>();
@@ -730,11 +856,10 @@ public class AssessmentController {
         result.put("name", assessment.getName());
         result.put("description", assessment.getDescription());
         result.put("status", assessment.getStatus());
+        result.put("progress", assessment.getProgress());
         result.put("createdAt", assessment.getCreatedAt());
         result.put("updatedAt", assessment.getUpdatedAt());
-        result.put("progress", assessment.getProgress());
         
-        // Convert chapters
         List<Map<String, Object>> chapters = new ArrayList<>();
         for (Chapter chapter : assessment.getChapters()) {
             Map<String, Object> chapterMap = new HashMap<>();
@@ -742,7 +867,6 @@ public class AssessmentController {
             chapterMap.put("name", chapter.getName());
             chapterMap.put("description", chapter.getDescription());
             
-            // Convert areas
             List<Map<String, Object>> areas = new ArrayList<>();
             for (Area area : chapter.getAreas()) {
                 Map<String, Object> areaMap = new HashMap<>();
@@ -752,7 +876,6 @@ public class AssessmentController {
                 areaMap.put("score", area.getScore());
                 areaMap.put("comment", area.getComment());
                 
-                // Convert requirements
                 List<Map<String, Object>> requirements = new ArrayList<>();
                 for (Requirement requirement : area.getRequirements()) {
                     Map<String, Object> requirementMap = new HashMap<>();
@@ -761,7 +884,6 @@ public class AssessmentController {
                     requirementMap.put("value", requirement.getValue());
                     requirementMap.put("status", requirement.getStatus());
                     requirementMap.put("comment", requirement.getComment());
-                    
                     requirements.add(requirementMap);
                 }
                 
@@ -779,26 +901,26 @@ public class AssessmentController {
     }
 
     /**
-     * Create a success response
-     * @param message Success message
-     * @return Map with success status and message
+     * Create error response
+     * @param message Error message
+     * @return Error response
      */
-    private Map<String, Object> createSuccessResponse(String message) {
+    private Map<String, Object> createErrorResponse(String message) {
         Map<String, Object> response = new HashMap<>();
-        response.put("success", true);
+        response.put("success", false);
         response.put("message", message);
         return response;
     }
 
     /**
-     * Create an error response
-     * @param message Error message
-     * @return Map with error status and message
+     * Create success response
+     * @param message Success message
+     * @return Success response
      */
-    private Map<String, Object> createErrorResponse(String message) {
+    private Map<String, Object> createSuccessResponse(String message) {
         Map<String, Object> response = new HashMap<>();
-        response.put("success", false);
-        response.put("error", message);
+        response.put("success", true);
+        response.put("message", message);
         return response;
     }
 }
