@@ -164,6 +164,8 @@ public class AssessmentController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<?> getAssessmentById(@PathVariable Long id, @RequestParam(required = false) String token) {
+        System.out.println("Processing request: GET /assessments/" + id + (token != null ? "?token=" + token : ""));
+        
         // Use security context that was set by JwtAuthFilter
         Employee employee = getCurrentUser();
         if (employee == null) {
@@ -211,9 +213,118 @@ public class AssessmentController {
         template.put("createdAt", LocalDateTime.now());
         template.put("updatedAt", LocalDateTime.now());
         
-        // Template content (abbreviated for brevity)
+        // Template content with sample chapters, areas, and requirements
         List<Map<String, Object>> chapters = new ArrayList<>();
-        // ... (existing template code)
+        
+        // Chapter 1
+        Map<String, Object> chapter1 = new HashMap<>();
+        chapter1.put("id", 1);
+        chapter1.put("name", "I. Organizacja systemu ochrony DO");
+        chapter1.put("description", "Planowanie i organizacja systemu ochrony danych osobowych");
+        
+        List<Map<String, Object>> areas1 = new ArrayList<>();
+        
+        // Area 1.1
+        Map<String, Object> area11 = new HashMap<>();
+        area11.put("id", 1);
+        area11.put("name", "I.1 Polityka w zakresie ochrony DO");
+        area11.put("description", "Polityka i procedury przetwarzania danych osobowych");
+        area11.put("score", "");
+        area11.put("comment", "");
+        
+        List<Map<String, Object>> requirements11 = new ArrayList<>();
+        
+        Map<String, Object> req1 = new HashMap<>();
+        req1.put("id", 1);
+        req1.put("text", "Czy opracowano i wdrożono politykę ochrony danych osobowych?");
+        req1.put("value", "");
+        req1.put("status", "NOT_STARTED");
+        req1.put("comment", "");
+        requirements11.add(req1);
+        
+        Map<String, Object> req2 = new HashMap<>();
+        req2.put("id", 2);
+        req2.put("text", "Czy polityka ochrony danych osobowych jest aktualna i zgodna z RODO?");
+        req2.put("value", "");
+        req2.put("status", "NOT_STARTED");
+        req2.put("comment", "");
+        requirements11.add(req2);
+        
+        Map<String, Object> req3 = new HashMap<>();
+        req3.put("id", 3);
+        req3.put("text", "Czy pracownicy zostali zapoznani z polityką ochrony danych osobowych?");
+        req3.put("value", "");
+        req3.put("status", "NOT_STARTED");
+        req3.put("comment", "");
+        requirements11.add(req3);
+        
+        area11.put("requirements", requirements11);
+        areas1.add(area11);
+        
+        // Area 1.2
+        Map<String, Object> area12 = new HashMap<>();
+        area12.put("id", 2);
+        area12.put("name", "I.2 Wyznaczenie ADO");
+        area12.put("description", "Wyznaczenie Administratora Danych Osobowych");
+        area12.put("score", "");
+        area12.put("comment", "");
+        
+        List<Map<String, Object>> requirements12 = new ArrayList<>();
+        
+        Map<String, Object> req4 = new HashMap<>();
+        req4.put("id", 4);
+        req4.put("text", "Czy w jednostce nastąpiło powierzenie zadań ADO wyznaczonym podmiotom?");
+        req4.put("value", "");
+        req4.put("status", "NOT_STARTED");
+        req4.put("comment", "");
+        requirements12.add(req4);
+        
+        Map<String, Object> req5 = new HashMap<>();
+        req5.put("id", 5);
+        req5.put("text", "Czy zakres zadań ADO został jasno określony?");
+        req5.put("value", "");
+        req5.put("status", "NOT_STARTED");
+        req5.put("comment", "");
+        requirements12.add(req5);
+        
+        area12.put("requirements", requirements12);
+        areas1.add(area12);
+        
+        chapter1.put("areas", areas1);
+        chapters.add(chapter1);
+        
+        // Chapter 2
+        Map<String, Object> chapter2 = new HashMap<>();
+        chapter2.put("id", 2);
+        chapter2.put("name", "II. Prawo do przetwarzania DO");
+        chapter2.put("description", "Zapewnienie poprawności procesów przetwarzania danych osobowych");
+        
+        List<Map<String, Object>> areas2 = new ArrayList<>();
+        
+        // Area 2.1
+        Map<String, Object> area21 = new HashMap<>();
+        area21.put("id", 3);
+        area21.put("name", "II.1 Podstawy prawne przetwarzania DO");
+        area21.put("description", "Podstawy prawne przetwarzania danych osobowych");
+        area21.put("score", "");
+        area21.put("comment", "");
+        
+        List<Map<String, Object>> requirements21 = new ArrayList<>();
+        
+        Map<String, Object> req6 = new HashMap<>();
+        req6.put("id", 6);
+        req6.put("text", "Czy zidentyfikowano podstawy prawne przetwarzania danych osobowych?");
+        req6.put("value", "");
+        req6.put("status", "NOT_STARTED");
+        req6.put("comment", "");
+        requirements21.add(req6);
+        
+        area21.put("requirements", requirements21);
+        areas2.add(area21);
+        
+        chapter2.put("areas", areas2);
+        chapters.add(chapter2);
+        
         template.put("chapters", chapters);
         
         return ResponseEntity.ok(template);
@@ -228,6 +339,9 @@ public class AssessmentController {
     @PostMapping
     public ResponseEntity<?> createAssessment(@Valid @RequestBody Map<String, Object> assessmentData, 
                                              @RequestParam(required = false) String token) {
+        System.out.println("Processing request: POST /assessments" + (token != null ? "?token=" + token : ""));
+        System.out.println("Creating new assessment: " + assessmentData);
+        
         // Use security context that was set by JwtAuthFilter
         Employee employee = getCurrentUser();
         if (employee == null) {
@@ -243,12 +357,80 @@ public class AssessmentController {
             
             // Create assessment
             Assessment assessment = new Assessment(name, description, status, employee);
+            assessment.setCreatedAt(LocalDateTime.now());
+            assessment.setUpdatedAt(LocalDateTime.now());
             
-            // Process chapters
-            // ... (existing implementation)
-            
-            // Save assessment
+            // Save assessment first to get ID
             assessment = assessmentRepository.save(assessment);
+            
+            // Process chapters if present
+            if (assessmentData.containsKey("chapters")) {
+                List<Map<String, Object>> chaptersData = (List<Map<String, Object>>) assessmentData.get("chapters");
+                if (chaptersData != null) {
+                    for (Map<String, Object> chapterData : chaptersData) {
+                        // Create chapter
+                        Chapter chapter = new Chapter();
+                        chapter.setName((String) chapterData.get("name"));
+                        chapter.setDescription((String) chapterData.get("description"));
+                        chapter.setAssessment(assessment);
+                        
+                        // Save chapter
+                        chapter = chapterRepository.save(chapter);
+                        
+                        // Process areas if present
+                        if (chapterData.containsKey("areas")) {
+                            List<Map<String, Object>> areasData = (List<Map<String, Object>>) chapterData.get("areas");
+                            if (areasData != null) {
+                                for (Map<String, Object> areaData : areasData) {
+                                    // Create area
+                                    Area area = new Area();
+                                    area.setName((String) areaData.get("name"));
+                                    area.setDescription((String) areaData.get("description"));
+                                    area.setScore((String) areaData.get("score"));
+                                    area.setComment((String) areaData.get("comment"));
+                                    area.setChapter(chapter);
+                                    
+                                    // Save area
+                                    area = areaRepository.save(area);
+                                    
+                                    // Process requirements if present
+                                    if (areaData.containsKey("requirements")) {
+                                        List<Map<String, Object>> requirementsData = (List<Map<String, Object>>) areaData.get("requirements");
+                                        if (requirementsData != null) {
+                                            for (Map<String, Object> requirementData : requirementsData) {
+                                                // Create requirement
+                                                Requirement requirement = new Requirement();
+                                                requirement.setText((String) requirementData.get("text"));
+                                                requirement.setValue((String) requirementData.get("value"));
+                                                requirement.setStatus((String) requirementData.get("status"));
+                                                requirement.setComment((String) requirementData.get("comment"));
+                                                requirement.setArea(area);
+                                                
+                                                // Save requirement
+                                                requirementRepository.save(requirement);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Calculate progress
+            int progress = calculateProgress(assessment.getId());
+            assessment.setProgress(progress);
+            
+            // Update status based on progress
+            if (progress == 100) {
+                assessment.setStatus("ZAKOŃCZONA");
+            } else if (progress > 0) {
+                assessment.setStatus("W TRAKCIE");
+            }
+            
+            // Save updated assessment
+            assessmentRepository.save(assessment);
             
             Map<String, Object> response = new HashMap<>();
             response.put("id", assessment.getId());
@@ -257,6 +439,7 @@ public class AssessmentController {
             
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(createErrorResponse("Wystąpił błąd podczas tworzenia oceny: " + e.getMessage()));
         }
@@ -273,6 +456,9 @@ public class AssessmentController {
     public ResponseEntity<?> updateAssessment(@PathVariable Long id, 
                                              @Valid @RequestBody Map<String, Object> assessmentData,
                                              @RequestParam(required = false) String token) {
+        System.out.println("Processing request: PUT /assessments/" + id + (token != null ? "?token=" + token : ""));
+        System.out.println("Zapisywanie oceny: " + assessmentData);
+        
         // Use security context that was set by JwtAuthFilter
         Employee employee = getCurrentUser();
         if (employee == null) {
@@ -296,10 +482,98 @@ public class AssessmentController {
 
         try {
             // Update assessment data
-            // ... (existing implementation)
+            assessment.setName((String) assessmentData.get("name"));
+            assessment.setDescription((String) assessmentData.get("description"));
+            assessment.setUpdatedAt(LocalDateTime.now());
+            
+            // Save assessment first
+            assessment = assessmentRepository.save(assessment);
+            
+            // Delete existing chapters, areas, and requirements
+            for (Chapter chapter : assessment.getChapters()) {
+                for (Area area : chapter.getAreas()) {
+                    for (Requirement requirement : area.getRequirements()) {
+                        requirementRepository.delete(requirement);
+                    }
+                    areaRepository.delete(area);
+                }
+                chapterRepository.delete(chapter);
+            }
+            
+            // Process chapters if present
+            if (assessmentData.containsKey("chapters")) {
+                List<Map<String, Object>> chaptersData = (List<Map<String, Object>>) assessmentData.get("chapters");
+                if (chaptersData != null) {
+                    for (Map<String, Object> chapterData : chaptersData) {
+                        // Create chapter
+                        Chapter chapter = new Chapter();
+                        chapter.setName((String) chapterData.get("name"));
+                        chapter.setDescription((String) chapterData.get("description"));
+                        chapter.setAssessment(assessment);
+                        
+                        // Save chapter
+                        chapter = chapterRepository.save(chapter);
+                        
+                        // Process areas if present
+                        if (chapterData.containsKey("areas")) {
+                            List<Map<String, Object>> areasData = (List<Map<String, Object>>) chapterData.get("areas");
+                            if (areasData != null) {
+                                for (Map<String, Object> areaData : areasData) {
+                                    // Create area
+                                    Area area = new Area();
+                                    area.setName((String) areaData.get("name"));
+                                    area.setDescription((String) areaData.get("description"));
+                                    area.setScore((String) areaData.get("score"));
+                                    area.setComment((String) areaData.get("comment"));
+                                    area.setChapter(chapter);
+                                    
+                                    // Save area
+                                    area = areaRepository.save(area);
+                                    
+                                    // Process requirements if present
+                                    if (areaData.containsKey("requirements")) {
+                                        List<Map<String, Object>> requirementsData = (List<Map<String, Object>>) areaData.get("requirements");
+                                        if (requirementsData != null) {
+                                            for (Map<String, Object> requirementData : requirementsData) {
+                                                // Create requirement
+                                                Requirement requirement = new Requirement();
+                                                requirement.setText((String) requirementData.get("text"));
+                                                requirement.setValue((String) requirementData.get("value"));
+                                                requirement.setStatus((String) requirementData.get("status"));
+                                                requirement.setComment((String) requirementData.get("comment"));
+                                                requirement.setArea(area);
+                                                
+                                                // Save requirement
+                                                requirementRepository.save(requirement);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Calculate progress
+            int progress = calculateProgress(assessment.getId());
+            assessment.setProgress(progress);
+            
+            // Update status based on progress
+            if (progress == 100) {
+                assessment.setStatus("ZAKOŃCZONA");
+            } else if (progress > 0) {
+                assessment.setStatus("W TRAKCIE");
+            } else {
+                assessment.setStatus("DRAFT");
+            }
+            
+            // Save updated assessment
+            assessmentRepository.save(assessment);
             
             return ResponseEntity.ok(createSuccessResponse("Ocena została zaktualizowana"));
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(createErrorResponse("Wystąpił błąd podczas aktualizacji oceny: " + e.getMessage()));
         }
@@ -335,7 +609,20 @@ public class AssessmentController {
         }
 
         try {
+            // Delete all related entities
+            for (Chapter chapter : assessment.getChapters()) {
+                for (Area area : chapter.getAreas()) {
+                    for (Requirement requirement : area.getRequirements()) {
+                        requirementRepository.delete(requirement);
+                    }
+                    areaRepository.delete(area);
+                }
+                chapterRepository.delete(chapter);
+            }
+            
+            // Delete assessment
             assessmentRepository.delete(assessment);
+            
             return ResponseEntity.ok(createSuccessResponse("Ocena została usunięta"));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -380,6 +667,118 @@ public class AssessmentController {
     }
 
     /**
+     * Calculate progress for an assessment
+     * @param assessmentId Assessment ID
+     * @return Progress percentage (0-100)
+     */
+    private int calculateProgress(Long assessmentId) {
+        Optional<Assessment> assessmentOpt = assessmentRepository.findById(assessmentId);
+        if (assessmentOpt.isEmpty()) {
+            return 0;
+        }
+        
+        Assessment assessment = assessmentOpt.get();
+        int totalRequirements = 0;
+        int completedRequirements = 0;
+        
+        for (Chapter chapter : assessment.getChapters()) {
+            for (Area area : chapter.getAreas()) {
+                for (Requirement requirement : area.getRequirements()) {
+                    totalRequirements++;
+                    
+                    // Check if requirement is completed
+                    String value = requirement.getValue();
+                    String status = requirement.getStatus();
+                    
+                    if ((value != null && !value.isEmpty()) || 
+                        (status != null && (status.equals("COMPLETED") || status.equals("NOT_APPLICABLE")))) {
+                        completedRequirements++;
+                    }
+                }
+            }
+        }
+        
+        return totalRequirements > 0 ? (completedRequirements * 100) / totalRequirements : 0;
+    }
+
+    /**
+     * Convert Assessment entity to summary map
+     * @param assessment Assessment entity
+     * @return Map with assessment summary
+     */
+    private Map<String, Object> convertToAssessmentSummary(Assessment assessment) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("id", assessment.getId());
+        result.put("name", assessment.getName());
+        result.put("description", assessment.getDescription());
+        result.put("status", assessment.getStatus());
+        result.put("createdAt", assessment.getCreatedAt());
+        result.put("updatedAt", assessment.getUpdatedAt());
+        result.put("progress", assessment.getProgress());
+        
+        return result;
+    }
+
+    /**
+     * Convert Assessment entity to detailed map
+     * @param assessment Assessment entity
+     * @return Map with detailed assessment data
+     */
+    private Map<String, Object> convertToDetailedAssessment(Assessment assessment) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("id", assessment.getId());
+        result.put("name", assessment.getName());
+        result.put("description", assessment.getDescription());
+        result.put("status", assessment.getStatus());
+        result.put("createdAt", assessment.getCreatedAt());
+        result.put("updatedAt", assessment.getUpdatedAt());
+        result.put("progress", assessment.getProgress());
+        
+        // Convert chapters
+        List<Map<String, Object>> chapters = new ArrayList<>();
+        for (Chapter chapter : assessment.getChapters()) {
+            Map<String, Object> chapterMap = new HashMap<>();
+            chapterMap.put("id", chapter.getId());
+            chapterMap.put("name", chapter.getName());
+            chapterMap.put("description", chapter.getDescription());
+            
+            // Convert areas
+            List<Map<String, Object>> areas = new ArrayList<>();
+            for (Area area : chapter.getAreas()) {
+                Map<String, Object> areaMap = new HashMap<>();
+                areaMap.put("id", area.getId());
+                areaMap.put("name", area.getName());
+                areaMap.put("description", area.getDescription());
+                areaMap.put("score", area.getScore());
+                areaMap.put("comment", area.getComment());
+                
+                // Convert requirements
+                List<Map<String, Object>> requirements = new ArrayList<>();
+                for (Requirement requirement : area.getRequirements()) {
+                    Map<String, Object> requirementMap = new HashMap<>();
+                    requirementMap.put("id", requirement.getId());
+                    requirementMap.put("text", requirement.getText());
+                    requirementMap.put("value", requirement.getValue());
+                    requirementMap.put("status", requirement.getStatus());
+                    requirementMap.put("comment", requirement.getComment());
+                    
+                    requirements.add(requirementMap);
+                }
+                
+                areaMap.put("requirements", requirements);
+                areas.add(areaMap);
+            }
+            
+            chapterMap.put("areas", areas);
+            chapters.add(chapterMap);
+        }
+        
+        result.put("chapters", chapters);
+        
+        return result;
+    }
+
+    /**
      * Create a success response
      * @param message Success message
      * @return Map with success status and message
@@ -399,106 +798,7 @@ public class AssessmentController {
     private Map<String, Object> createErrorResponse(String message) {
         Map<String, Object> response = new HashMap<>();
         response.put("success", false);
-        response.put("message", message);
+        response.put("error", message);
         return response;
-    }
-
-    /**
-     * Convert Assessment to summary format
-     * @param assessment Assessment entity
-     * @return Assessment summary
-     */
-    private Map<String, Object> convertToAssessmentSummary(Assessment assessment) {
-        Map<String, Object> result = new HashMap<>();
-        result.put("id", assessment.getId());
-        result.put("name", assessment.getName());
-        result.put("description", assessment.getDescription());
-        result.put("status", assessment.getStatus());
-        result.put("createdAt", assessment.getCreatedAt());
-        result.put("updatedAt", assessment.getUpdatedAt());
-        
-        // Dodaj informacje o liczbie rozdziałów, obszarów itp.
-        if (assessment.getChapters() != null) {
-            result.put("chaptersCount", assessment.getChapters().size());
-            
-            int areasCount = 0;
-            int requirementsCount = 0;
-            for (Chapter chapter : assessment.getChapters()) {
-                if (chapter.getAreas() != null) {
-                    areasCount += chapter.getAreas().size();
-                    for (Area area : chapter.getAreas()) {
-                        if (area.getRequirements() != null) {
-                            requirementsCount += area.getRequirements().size();
-                        }
-                    }
-                }
-            }
-            result.put("areasCount", areasCount);
-            result.put("requirementsCount", requirementsCount);
-        } else {
-            result.put("chaptersCount", 0);
-            result.put("areasCount", 0);
-            result.put("requirementsCount", 0);
-        }
-        
-        return result;
-    }
-
-    /**
-     * Convert Assessment to detailed format
-     * @param assessment Assessment entity
-     * @return Detailed assessment
-     */
-    private Map<String, Object> convertToDetailedAssessment(Assessment assessment) {
-        Map<String, Object> result = new HashMap<>();
-        result.put("id", assessment.getId());
-        result.put("name", assessment.getName());
-        result.put("description", assessment.getDescription());
-        result.put("status", assessment.getStatus());
-        result.put("createdAt", assessment.getCreatedAt());
-        result.put("updatedAt", assessment.getUpdatedAt());
-        
-        // Dodaj informacje o rozdziałach, obszarach i wymaganiach
-        List<Map<String, Object>> chaptersData = new ArrayList<>();
-        if (assessment.getChapters() != null) {
-            for (Chapter chapter : assessment.getChapters()) {
-                Map<String, Object> chapterData = new HashMap<>();
-                chapterData.put("id", chapter.getId());
-                chapterData.put("name", chapter.getName());
-                chapterData.put("description", chapter.getDescription());
-                
-                List<Map<String, Object>> areasData = new ArrayList<>();
-                if (chapter.getAreas() != null) {
-                    for (Area area : chapter.getAreas()) {
-                        Map<String, Object> areaData = new HashMap<>();
-                        areaData.put("id", area.getId());
-                        areaData.put("name", area.getName());
-                        areaData.put("description", area.getDescription());
-                        areaData.put("score", area.getScore());
-                        areaData.put("comment", area.getComment());
-                        
-                        List<Map<String, Object>> requirementsData = new ArrayList<>();
-                        if (area.getRequirements() != null) {
-                            for (Requirement requirement : area.getRequirements()) {
-                                Map<String, Object> requirementData = new HashMap<>();
-                                requirementData.put("id", requirement.getId());
-                                requirementData.put("text", requirement.getText());
-                                requirementData.put("value", requirement.getValue());
-                                requirementData.put("comment", requirement.getComment());
-                                
-                                requirementsData.add(requirementData);
-                            }
-                        }
-                        areaData.put("requirements", requirementsData);
-                        areasData.add(areaData);
-                    }
-                }
-                chapterData.put("areas", areasData);
-                chaptersData.add(chapterData);
-            }
-        }
-        result.put("chapters", chaptersData);
-        
-        return result;
     }
 }
