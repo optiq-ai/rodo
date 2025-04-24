@@ -2,6 +2,7 @@ package com.auth.jwt.controller;
 
 import com.auth.jwt.data.dto.authorization.CredentialsDto;
 import com.auth.jwt.data.entity.employee.Employee;
+import com.auth.jwt.data.entity.employee.Role;
 import com.auth.jwt.data.repository.employee.EmployeeJpaRepository;
 import com.auth.jwt.security.UserAuthProvider;
 import org.springframework.http.ResponseEntity;
@@ -12,6 +13,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Collection;
+import java.util.Iterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,8 +68,14 @@ public class AuthController {
             response.put("email", employee.getEmail());
             
             // Dodajemy role użytkownika, jeśli są dostępne
-            if (employee.getRoles() != null && !employee.getRoles().isEmpty()) {
-                response.put("role", employee.getRoles().get(0).getName());
+            Collection<Role> roles = employee.getRoles();
+            if (roles != null && !roles.isEmpty()) {
+                // Pobieramy pierwszą rolę z kolekcji za pomocą iteratora
+                Iterator<Role> iterator = roles.iterator();
+                if (iterator.hasNext()) {
+                    Role firstRole = iterator.next();
+                    response.put("role", firstRole.getName());
+                }
             }
             
             logger.info("Logowanie udane dla użytkownika: {}", employee.getUserName());
@@ -98,8 +107,14 @@ public class AuthController {
                 response.put("email", employee.getEmail());
                 
                 // Dodajemy role użytkownika, jeśli są dostępne
-                if (employee.getRoles() != null && !employee.getRoles().isEmpty()) {
-                    response.put("role", employee.getRoles().get(0).getName());
+                Collection<Role> roles = employee.getRoles();
+                if (roles != null && !roles.isEmpty()) {
+                    // Pobieramy pierwszą rolę z kolekcji za pomocą iteratora
+                    Iterator<Role> iterator = roles.iterator();
+                    if (iterator.hasNext()) {
+                        Role firstRole = iterator.next();
+                        response.put("role", firstRole.getName());
+                    }
                 }
                 
                 logger.info("Token zweryfikowany pomyślnie dla użytkownika: {}", employee.getUserName());
