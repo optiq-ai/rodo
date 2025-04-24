@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import LoginPage from './components/LoginPageComponents/LoginPage/LoginPage';
 import Dashboard from './pages/Dashboard';
 import Register from './pages/Register';
-import ProtectedRoute from './ProtectedRoute/ProtectedRoute';
+import ProtectedRoute from './ProtectedRoute'; // Updated import path
 import './App.css';
 import './animations.css';
 import './assessment-animations.css';

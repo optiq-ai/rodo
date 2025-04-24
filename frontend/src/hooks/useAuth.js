@@ -1,6 +1,6 @@
-import { useContext } from 'react';
-import { AuthContext } from '../contexts/AuthContext';
+// This file is kept for backward compatibility
+// Import and re-export the useAuth hook from AuthContext
+import { useAuth } from '../contexts/AuthContext';
 
-export const useAuth = () => {
-  return useContext(AuthContext);
-};
+export { useAuth };
+export default useAuth;

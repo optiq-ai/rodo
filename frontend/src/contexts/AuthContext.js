@@ -2,7 +2,7 @@ import React, { createContext, useState, useEffect, useContext } from 'react';
 import { authAPI } from '../services/api';
 
 // Create authentication context
-const AuthContext = createContext(null);
+export const AuthContext = createContext(null);
 
 // Authentication provider component
 export const AuthProvider = ({ children }) => {
