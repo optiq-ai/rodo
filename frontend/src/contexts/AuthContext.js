@@ -14,18 +14,19 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      verifyToken();
+      verifyToken(token);
     } else {
       setLoading(false);
     }
   }, []);
 
   // Verify token validity
-  const verifyToken = async () => {
+  const verifyToken = async (token) => {
     try {
       setLoading(true);
-      const response = await authAPI.verifyToken();
-      if (response.valid) {
+      const response = await authAPI.verifyToken(token);
+      
+      if (response.success && response.valid) {
         setCurrentUser({
           username: response.username,
           email: response.email,
@@ -33,6 +34,7 @@ export const AuthProvider = ({ children }) => {
         });
       } else {
         // If token is invalid, log out
+        console.error('Token verification failed: Token invalid');
         logout();
       }
     } catch (error) {
@@ -48,14 +50,26 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true);
       setError(null);
+      
+      // Validate credentials before sending to server
+      if (!credentials.userName || !credentials.password) {
+        setError('Username and password are required');
+        return { success: false, error: 'Username and password are required' };
+      }
+      
       const response = await authAPI.login(credentials);
+      
+      if (!response.success) {
+        setError(response.error || 'Login failed. Please try again.');
+        return { success: false, error: response.error || 'Login failed. Please try again.' };
+      }
       
       // Store token in localStorage
       localStorage.setItem('token', response.token);
       
-      // Set current user
+      // Set current user from response data
       setCurrentUser({
-        username: response.username || credentials.userName,
+        username: response.username,
         email: response.email,
         role: response.role || 'USER'
       });
@@ -63,8 +77,9 @@ export const AuthProvider = ({ children }) => {
       return { success: true };
     } catch (error) {
       console.error('Login failed:', error);
-      setError(error.response?.data?.message || 'Login failed. Please try again.');
-      return { success: false, error: error.response?.data?.message || 'Login failed. Please try again.' };
+      const errorMessage = error.response?.data?.message || 'Login failed. Please try again.';
+      setError(errorMessage);
+      return { success: false, error: errorMessage };
     } finally {
       setLoading(false);
     }
@@ -75,14 +90,26 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true);
       setError(null);
+      
+      // Validate user data before sending to server
+      if (!userData.userName || !userData.password) {
+        setError('Username and password are required');
+        return { success: false, error: 'Username and password are required' };
+      }
+      
       const response = await authAPI.register(userData);
+      
+      if (!response.success) {
+        setError(response.error || 'Registration failed. Please try again.');
+        return { success: false, error: response.error || 'Registration failed. Please try again.' };
+      }
       
       // Store token in localStorage
       localStorage.setItem('token', response.token);
       
-      // Set current user
+      // Set current user from response data
       setCurrentUser({
-        username: response.username || userData.userName,
+        username: response.username,
         email: response.email,
         role: response.role || 'USER'
       });
@@ -90,8 +117,9 @@ export const AuthProvider = ({ children }) => {
       return { success: true };
     } catch (error) {
       console.error('Registration failed:', error);
-      setError(error.response?.data?.message || 'Registration failed. Please try again.');
-      return { success: false, error: error.response?.data?.message || 'Registration failed. Please try again.' };
+      const errorMessage = error.response?.data?.message || 'Registration failed. Please try again.';
+      setError(errorMessage);
+      return { success: false, error: errorMessage };
     } finally {
       setLoading(false);
     }

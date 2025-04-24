@@ -58,13 +58,15 @@ export const authAPI = {
       return {
         success: true,
         token: response.data.token,
-        username: credentials.userName
+        username: response.data.username,
+        email: response.data.email,
+        role: response.data.role
       };
     } catch (error) {
       console.error('[authAPI.login] Błąd logowania:', error.message);
       return {
         success: false,
-        error: error.response?.data?.error || 'Błąd logowania'
+        error: error.response?.data?.message || 'Błąd logowania'
       };
     }
   },
@@ -77,7 +79,9 @@ export const authAPI = {
       return {
         success: true,
         token: response.data.token,
-        username: userData.userName
+        username: response.data.username,
+        email: response.data.email,
+        role: response.data.role
       };
     } catch (error) {
       console.error('[authAPI.register] Błąd rejestracji:', error.message);
@@ -95,13 +99,17 @@ export const authAPI = {
       console.log('[authAPI.verifyToken] Token zweryfikowany pomyślnie');
       return {
         success: true,
-        username: response.data.username
+        valid: response.data.valid,
+        username: response.data.username,
+        email: response.data.email,
+        role: response.data.role
       };
     } catch (error) {
       console.error('[authAPI.verifyToken] Błąd weryfikacji tokenu:', error.message);
       return {
         success: false,
-        error: error.response?.data?.error || 'Błąd weryfikacji tokenu'
+        valid: false,
+        error: error.response?.data?.message || 'Błąd weryfikacji tokenu'
       };
     }
   }
