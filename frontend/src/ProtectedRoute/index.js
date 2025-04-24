@@ -3,7 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 // Protected route component that redirects to login if user is not authenticated
-const ProtectedRoute = ({ element }) => {
+const ProtectedRoute = ({ children }) => {
   const { currentUser, loading } = useAuth();
 
   // Show loading state while checking authentication
@@ -16,8 +16,8 @@ const ProtectedRoute = ({ element }) => {
     return <Navigate to="/login" />;
   }
 
-  // Render element if authenticated
-  return element;
+  // Render children if authenticated
+  return children;
 };
 
 export default ProtectedRoute;
