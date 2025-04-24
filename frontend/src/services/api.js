@@ -116,6 +116,15 @@ export const assessmentAPI = {
     }
   },
   
+  getSummary: async () => {
+    try {
+      const response = await api.get('/assessments/summary');
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+  
   getById: async (id) => {
     try {
       const response = await api.get(`/assessments/${id}`);
@@ -168,14 +177,44 @@ export const assessmentAPI = {
     } catch (error) {
       throw error;
     }
+  },
+  
+  getTemplate: async () => {
+    try {
+      const response = await api.get('/assessments/template');
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+  
+  exportAssessment: async (id) => {
+    try {
+      const response = await api.get(`/assessments/${id}/export`);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
   }
 };
 
 // Report API
 export const reportAPI = {
-  getAll: async () => {
+  getAll: async (filters = {}) => {
     try {
-      const response = await api.get('/reports');
+      let url = '/reports';
+      const queryParams = [];
+      
+      if (filters.dateRange) queryParams.push(`dateRange=${filters.dateRange}`);
+      if (filters.riskCategory) queryParams.push(`riskCategory=${filters.riskCategory}`);
+      if (filters.riskLevel) queryParams.push(`riskLevel=${filters.riskLevel}`);
+      if (filters.sortBy) queryParams.push(`sortBy=${filters.sortBy}`);
+      
+      if (queryParams.length > 0) {
+        url += `?${queryParams.join('&')}`;
+      }
+      
+      const response = await api.get(url);
       return response.data;
     } catch (error) {
       throw error;

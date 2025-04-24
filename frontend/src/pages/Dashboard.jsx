@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Container, Toast, ToastContainer } from 'react-bootstrap';
 import { useAuth } from '../hooks/useAuth';
 import CompactDashboard from '../components/dashboard/CompactDashboard';
+import { assessmentAPI } from '../services/api';
 
 const Dashboard = () => {
   const { currentUser } = useAuth();
@@ -12,47 +13,28 @@ const Dashboard = () => {
   const [toastVariant, setToastVariant] = useState('success');
 
   useEffect(() => {
-    // Symulacja pobierania danych z API
+    // Pobieranie danych z API
     const fetchAssessments = async () => {
       try {
-        // W rzeczywistości będzie to wywołanie do backendu
-        // const response = await assessmentService.getAssessments();
+        // Pobieranie ocen z API
+        const assessmentData = await assessmentAPI.getAll();
         
-        // Tymczasowe dane dla szkieletu
-        const mockAssessments = [
-          {
-            id: 1,
-            name: 'Ocena RODO - Dział IT',
-            createdAt: '2025-04-15',
-            status: 'W TRAKCIE',
-            progress: 45,
-            positiveAreas: 12,
-            warningAreas: 8,
-            negativeAreas: 3
-          },
-          {
-            id: 2,
-            name: 'Ocena RODO - Dział HR',
-            createdAt: '2025-04-10',
-            status: 'ZAKOŃCZONA',
-            progress: 100,
-            positiveAreas: 30,
-            warningAreas: 15,
-            negativeAreas: 4
-          },
-          {
-            id: 3,
-            name: 'Ocena RODO - Dział Marketingu',
-            createdAt: '2025-04-05',
-            status: 'W TRAKCIE',
-            progress: 75,
-            positiveAreas: 20,
-            warningAreas: 10,
-            negativeAreas: 2
-          }
-        ];
+        // Pobieranie podsumowania ocen z API
+        const summaryData = await assessmentAPI.getSummary();
         
-        setAssessments(mockAssessments);
+        // Mapowanie danych z API do formatu oczekiwanego przez komponent
+        const mappedAssessments = assessmentData.map(assessment => ({
+          id: assessment.id,
+          name: assessment.name,
+          createdAt: assessment.createdAt ? new Date(assessment.createdAt).toLocaleDateString() : 'Brak daty',
+          status: assessment.status || 'W TRAKCIE',
+          progress: assessment.progress || calculateProgress(assessment),
+          positiveAreas: assessment.positiveAreas || summaryData.positiveAreas || 0,
+          warningAreas: assessment.warningAreas || summaryData.warningAreas || 0,
+          negativeAreas: assessment.negativeAreas || summaryData.negativeAreas || 0
+        }));
+        
+        setAssessments(mappedAssessments);
       } catch (error) {
         console.error('Błąd podczas pobierania ocen:', error);
         showToastMessage('Błąd podczas pobierania ocen', 'danger');
@@ -64,12 +46,37 @@ const Dashboard = () => {
     fetchAssessments();
   }, []);
 
-  const handleDeleteAssessment = (assessmentId) => {
+  // Funkcja pomocnicza do obliczania procentu ukończenia oceny
+  const calculateProgress = (assessment) => {
+    if (!assessment || !assessment.chapters) return 0;
+    
+    let totalRequirements = 0;
+    let completedRequirements = 0;
+    
+    assessment.chapters.forEach(chapter => {
+      if (chapter.areas) {
+        chapter.areas.forEach(area => {
+          if (area.requirements) {
+            totalRequirements += area.requirements.length;
+            area.requirements.forEach(req => {
+              if (req.status && req.status !== 'NOT_STARTED') {
+                completedRequirements++;
+              }
+            });
+          }
+        });
+      }
+    });
+    
+    return totalRequirements > 0 ? Math.round((completedRequirements / totalRequirements) * 100) : 0;
+  };
+
+  const handleDeleteAssessment = async (assessmentId) => {
     try {
-      // W rzeczywistości będzie to wywołanie do backendu
-      // await assessmentService.deleteAssessment(assessmentId);
+      // Wywołanie API do usunięcia oceny
+      await assessmentAPI.delete(assessmentId);
       
-      // Tymczasowa implementacja - usunięcie z lokalnego stanu
+      // Aktualizacja lokalnego stanu po usunięciu
       const updatedAssessments = assessments.filter(assessment => assessment.id !== assessmentId);
       setAssessments(updatedAssessments);
       

@@ -15,6 +15,7 @@ import {
 } from 'chart.js';
 import { Radar, Bar, Line } from 'react-chartjs-2';
 import AreaDetailsModal from '../components/modals/AreaDetailsModal';
+import { reportAPI } from '../services/api';
 
 // Rejestracja komponentów Chart.js
 ChartJS.register(
@@ -50,55 +51,35 @@ const DetailedReports = () => {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedArea, setSelectedArea] = useState(null);
 
-  // Symulacja ładowania danych
+  // Pobieranie danych z API
   useEffect(() => {
-    // W rzeczywistej aplikacji tutaj byłoby pobieranie danych z API
-    setTimeout(() => {
-      setReportData(generateMockData());
-      setLoading(false);
-    }, 800);
-  }, []);
-
-  // Funkcja generująca przykładowe dane
-  const generateMockData = () => {
-    return {
-      complianceAreas: [
-        { id: 1, name: 'Zgoda na przetwarzanie', score: 85, risk: 'low' },
-        { id: 2, name: 'Bezpieczeństwo danych', score: 62, risk: 'medium' },
-        { id: 3, name: 'Prawa podmiotów danych', score: 78, risk: 'low' },
-        { id: 4, name: 'Rejestr czynności', score: 45, risk: 'high' },
-        { id: 5, name: 'Ocena skutków', score: 58, risk: 'medium' },
-        { id: 6, name: 'Powierzenie przetwarzania', score: 72, risk: 'medium' },
-        { id: 7, name: 'Incydenty bezpieczeństwa', score: 40, risk: 'high' },
-        { id: 8, name: 'Dokumentacja', score: 65, risk: 'medium' }
-      ],
-      riskAssessment: {
-        beforeMitigation: [68, 45, 72, 35, 58, 65, 30, 55],
-        afterMitigation: [85, 62, 78, 45, 70, 72, 40, 65]
-      },
-      trends: {
-        labels: ['Sty', 'Lut', 'Mar', 'Kwi', 'Maj', 'Cze'],
-        data: [55, 58, 62, 65, 70, 75]
-      },
-      recommendations: [
-        { id: 1, area: 'Rejestr czynności', action: 'Uzupełnić brakujące wpisy w rejestrze', priority: 'high', estimatedTime: '2 tygodnie', estimatedCost: 'Niski' },
-        { id: 2, area: 'Incydenty bezpieczeństwa', action: 'Wdrożyć procedurę zgłaszania incydentów', priority: 'high', estimatedTime: '3 tygodnie', estimatedCost: 'Średni' },
-        { id: 3, area: 'Bezpieczeństwo danych', action: 'Przeprowadzić szkolenie dla pracowników', priority: 'medium', estimatedTime: '1 miesiąc', estimatedCost: 'Średni' },
-        { id: 4, area: 'Ocena skutków', action: 'Zaktualizować dokumentację DPIA', priority: 'medium', estimatedTime: '2 tygodnie', estimatedCost: 'Niski' },
-        { id: 5, area: 'Dokumentacja', action: 'Przegląd i aktualizacja polityk bezpieczeństwa', priority: 'low', estimatedTime: '1 miesiąc', estimatedCost: 'Niski' }
-      ],
-      upcomingDeadlines: [
-        { id: 1, task: 'Uzupełnienie rejestru czynności', deadline: '2025-05-15', daysLeft: 23 },
-        { id: 2, task: 'Wdrożenie procedury incydentów', deadline: '2025-05-30', daysLeft: 38 },
-        { id: 3, task: 'Szkolenie pracowników', deadline: '2025-06-15', daysLeft: 54 }
-      ],
-      benchmarks: {
-        industry: 68,
-        yourScore: 75,
-        topPerformer: 92
+    const fetchReportData = async () => {
+      try {
+        setLoading(true);
+        
+        // Przygotowanie parametrów filtrowania dla API
+        const apiFilters = {};
+        if (filters.dateRange !== 'all') apiFilters.dateRange = filters.dateRange;
+        if (filters.riskCategory !== 'all') apiFilters.riskCategory = filters.riskCategory;
+        if (filters.riskLevel !== 'all') apiFilters.riskLevel = filters.riskLevel;
+        if (filters.sortBy !== 'date') apiFilters.sortBy = filters.sortBy;
+        
+        // Pobieranie danych raportu z API
+        const data = await reportAPI.getAll(apiFilters);
+        setReportData(data);
+      } catch (error) {
+        console.error('Błąd podczas pobierania danych raportu:', error);
+        setAlertMessage({
+          type: 'danger',
+          text: 'Wystąpił błąd podczas pobierania danych raportu. Spróbuj ponownie później.'
+        });
+      } finally {
+        setLoading(false);
       }
     };
-  };
+
+    fetchReportData();
+  }, [filters]);
 
   // Obsługa zmiany filtrów
   const handleFilterChange = (e) => {
@@ -110,11 +91,21 @@ const DetailedReports = () => {
   };
 
   // Obsługa eksportu
-  const handleExport = () => {
-    setAlertMessage({
-      type: 'success',
-      text: `Raport został wyeksportowany do formatu ${exportFormat.toUpperCase()}`
-    });
+  const handleExport = async () => {
+    try {
+      const result = await reportAPI.exportReport(exportFormat);
+      
+      setAlertMessage({
+        type: 'success',
+        text: result.message || `Raport został wyeksportowany do formatu ${exportFormat.toUpperCase()}`
+      });
+    } catch (error) {
+      console.error('Błąd podczas eksportu raportu:', error);
+      setAlertMessage({
+        type: 'danger',
+        text: 'Wystąpił błąd podczas eksportu raportu. Spróbuj ponownie później.'
+      });
+    }
     
     setTimeout(() => {
       setAlertMessage(null);
@@ -135,11 +126,11 @@ const DetailedReports = () => {
 
   // Dane dla wykresu radarowego
   const radarData = {
-    labels: reportData?.complianceAreas.map(area => area.name) || [],
+    labels: reportData?.complianceAreas?.map(area => area.name) || [],
     datasets: [
       {
         label: 'Poziom zgodności (%)',
-        data: reportData?.complianceAreas.map(area => area.score) || [],
+        data: reportData?.complianceAreas?.map(area => area.score) || [],
         backgroundColor: 'rgba(63, 81, 181, 0.2)',
         borderColor: 'rgba(63, 81, 181, 1)',
         borderWidth: 2,
@@ -153,18 +144,18 @@ const DetailedReports = () => {
 
   // Dane dla wykresu słupkowego
   const barData = {
-    labels: reportData?.complianceAreas.map(area => area.name) || [],
+    labels: reportData?.complianceAreas?.map(area => area.name) || [],
     datasets: [
       {
         label: 'Przed wdrożeniem środków',
-        data: reportData?.riskAssessment.beforeMitigation || [],
+        data: reportData?.riskAssessment?.beforeMitigation || [],
         backgroundColor: 'rgba(220, 53, 69, 0.6)',
         borderColor: 'rgba(220, 53, 69, 1)',
         borderWidth: 1
       },
       {
         label: 'Po wdrożeniu środków',
-        data: reportData?.riskAssessment.afterMitigation || [],
+        data: reportData?.riskAssessment?.afterMitigation || [],
         backgroundColor: 'rgba(40, 167, 69, 0.6)',
         borderColor: 'rgba(40, 167, 69, 1)',
         borderWidth: 1
@@ -174,11 +165,11 @@ const DetailedReports = () => {
 
   // Dane dla wykresu liniowego
   const lineData = {
-    labels: reportData?.trends.labels || [],
+    labels: reportData?.trends?.labels || [],
     datasets: [
       {
         label: 'Trend zgodności z RODO (%)',
-        data: reportData?.trends.data || [],
+        data: reportData?.trends?.data || [],
         fill: false,
         backgroundColor: 'rgba(63, 81, 181, 0.8)',
         borderColor: 'rgba(63, 81, 181, 1)',
@@ -267,24 +258,24 @@ const DetailedReports = () => {
             <Card.Body className="text-center">
               <div className="d-flex flex-column align-items-center mb-3">
                 <h6>Twój wynik</h6>
-                <div className="display-4 fw-bold text-primary">{reportData.benchmarks.yourScore}%</div>
+                <div className="display-4 fw-bold text-primary">{reportData?.benchmarks?.yourScore || 0}%</div>
               </div>
               <div className="d-flex justify-content-between mb-2">
                 <div>
                   <small className="d-block text-muted">Średnia branżowa</small>
-                  <div className="fw-bold">{reportData.benchmarks.industry}%</div>
+                  <div className="fw-bold">{reportData?.benchmarks?.industry || 0}%</div>
                 </div>
                 <div>
                   <small className="d-block text-muted">Najlepszy wynik</small>
-                  <div className="fw-bold">{reportData.benchmarks.topPerformer}%</div>
+                  <div className="fw-bold">{reportData?.benchmarks?.topPerformer || 0}%</div>
                 </div>
               </div>
               <div className="progress mt-3">
                 <div 
                   className="progress-bar" 
                   role="progressbar" 
-                  style={{width: `${reportData.benchmarks.yourScore}%`}}
-                  aria-valuenow={reportData.benchmarks.yourScore} 
+                  style={{width: `${reportData?.benchmarks?.yourScore || 0}%`}}
+                  aria-valuenow={reportData?.benchmarks?.yourScore || 0} 
                   aria-valuemin="0" 
                   aria-valuemax="100"
                 />
@@ -314,7 +305,7 @@ const DetailedReports = () => {
             </tr>
           </thead>
           <tbody>
-            {reportData.recommendations.map(rec => (
+            {(reportData?.recommendations || []).map(rec => (
               <tr key={rec.id}>
                 <td>{rec.area}</td>
                 <td>{rec.action}</td>
@@ -355,7 +346,7 @@ const DetailedReports = () => {
               </tr>
             </thead>
             <tbody>
-              {reportData.complianceAreas.map(area => (
+              {(reportData?.complianceAreas || []).map(area => (
                 <tr key={area.id}>
                   <td>{area.name}</td>
                   <td>
@@ -418,7 +409,7 @@ const DetailedReports = () => {
               </tr>
             </thead>
             <tbody>
-              {reportData.upcomingDeadlines.map(deadline => (
+              {(reportData?.upcomingDeadlines || []).map(deadline => (
                 <tr key={deadline.id}>
                   <td>{deadline.task}</td>
                   <td>{deadline.deadline}</td>
@@ -479,6 +470,7 @@ const DetailedReports = () => {
                       <option value="all">Wszystkie</option>
                       <option value="last30">Ostatnie 30 dni</option>
                       <option value="last90">Ostatnie 90 dni</option>
+                      <option value="last180">Ostatnie 6 miesięcy</option>
                       <option value="last365">Ostatni rok</option>
                     </Form.Select>
                   </Form.Group>
@@ -492,10 +484,11 @@ const DetailedReports = () => {
                       onChange={handleFilterChange}
                     >
                       <option value="all">Wszystkie</option>
-                      <option value="data_security">Bezpieczeństwo danych</option>
-                      <option value="consent">Zgoda na przetwarzanie</option>
-                      <option value="data_subject_rights">Prawa podmiotów</option>
-                      <option value="documentation">Dokumentacja</option>
+                      <option value="personal_data">Dane osobowe</option>
+                      <option value="sensitive_data">Dane wrażliwe</option>
+                      <option value="children_data">Dane dzieci</option>
+                      <option value="profiling">Profilowanie</option>
+                      <option value="marketing">Marketing</option>
                     </Form.Select>
                   </Form.Group>
                 </Col>
@@ -522,11 +515,10 @@ const DetailedReports = () => {
                       value={filters.sortBy}
                       onChange={handleFilterChange}
                     >
-                      <option value="date">Data (najnowsze)</option>
-                      <option value="risk_high">Ryzyko (najwyższe)</option>
-                      <option value="risk_low">Ryzyko (najniższe)</option>
-                      <option value="compliance_high">Zgodność (najwyższa)</option>
-                      <option value="compliance_low">Zgodność (najniższa)</option>
+                      <option value="date">Data</option>
+                      <option value="score">Poziom zgodności</option>
+                      <option value="risk">Poziom ryzyka</option>
+                      <option value="name">Nazwa</option>
                     </Form.Select>
                   </Form.Group>
                 </Col>
@@ -538,57 +530,64 @@ const DetailedReports = () => {
       
       <Row className="mb-4">
         <Col>
-          <div className="d-flex justify-content-end">
-            <Form.Select 
-              className="me-2" 
-              style={{width: 'auto'}}
-              value={exportFormat}
-              onChange={(e) => setExportFormat(e.target.value)}
-            >
-              <option value="pdf">PDF</option>
-              <option value="excel">Excel</option>
-              <option value="csv">CSV</option>
-            </Form.Select>
-            <Button variant="outline-primary" className="me-2" onClick={handleExport}>
-              Eksportuj raport
-            </Button>
-            <Button variant="outline-secondary" onClick={handleShare}>
-              Udostępnij
-            </Button>
-          </div>
-        </Col>
-      </Row>
-      
-      <Row>
-        <Col>
-          <Card>
-            <Card.Body>
+          <Card className="fade-in" style={{animationDelay: '0.1s'}}>
+            <Card.Body className="p-0">
               <Tabs
                 activeKey={activeTab}
                 onSelect={(k) => setActiveTab(k)}
-                className="mb-4"
+                className="mb-0 nav-tabs-custom"
+                fill
               >
-                <Tab 
-                  eventKey="overview" 
-                  title="Przegląd"
-                >
-                  {renderOverviewTab()}
+                <Tab eventKey="overview" title="Przegląd">
+                  <div className="p-4">
+                    {renderOverviewTab()}
+                  </div>
                 </Tab>
-                <Tab 
-                  eventKey="recommendations" 
-                  title="Rekomendacje"
-                >
-                  {renderRecommendationsTab()}
+                <Tab eventKey="recommendations" title="Rekomendacje">
+                  <div className="p-4">
+                    {renderRecommendationsTab()}
+                  </div>
                 </Tab>
-                <Tab 
-                  eventKey="details" 
-                  title="Szczegóły"
-                >
-                  {renderDetailsTab()}
+                <Tab eventKey="details" title="Szczegóły">
+                  <div className="p-4">
+                    {renderDetailsTab()}
+                  </div>
                 </Tab>
               </Tabs>
             </Card.Body>
           </Card>
+        </Col>
+      </Row>
+      
+      <Row>
+        <Col className="text-end">
+          <Form.Group className="d-inline-block me-2">
+            <Form.Select 
+              size="sm"
+              value={exportFormat}
+              onChange={(e) => setExportFormat(e.target.value)}
+              style={{width: '100px'}}
+            >
+              <option value="pdf">PDF</option>
+              <option value="xlsx">Excel</option>
+              <option value="docx">Word</option>
+            </Form.Select>
+          </Form.Group>
+          <Button 
+            variant="primary" 
+            size="sm"
+            onClick={handleExport}
+            className="me-2"
+          >
+            Eksportuj raport
+          </Button>
+          <Button 
+            variant="outline-primary" 
+            size="sm"
+            onClick={handleShare}
+          >
+            Udostępnij raport
+          </Button>
         </Col>
       </Row>
     </Container>
