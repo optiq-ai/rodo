@@ -17,9 +17,10 @@ const LoginForm = () => {
     setIsLoading(true);
     
     try {
+      console.log("Logowanie dla użytkownika:", userName);
       const result = await login({
         userName,
-        password: password.split(''),
+        password, // Pass password as a string, not an array of characters
       });
       
       if (result.success) {
