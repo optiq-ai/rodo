@@ -45,30 +45,23 @@ public class ReportController {
     }
 
     /**
-     * Get the current authenticated user from token parameter
-     * @param token JWT token
-     * @return Employee object or null
-     */
-    private Employee getUserFromToken(String token) {
-        try {
-            Authentication authentication = userAuthProviderParam.validateToken(token);
-            if (authentication != null && authentication.getName() != null) {
-                return employeeRepository.findByLogin(authentication.getName());
-            }
-        } catch (Exception e) {
-            // Token validation failed
-        }
-        return null;
-    }
-
-    /**
      * Get the current authenticated user
      * @return Employee object or null
      */
     private Employee getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.getName() != null) {
-            return employeeRepository.findByLogin(authentication.getName());
+            String username = authentication.getName();
+            // Sprawdź, czy nazwa użytkownika nie jest obiektem Employee
+            if (username.contains("Employee{")) {
+                // Wyciągnij userName z obiektu Employee
+                int start = username.indexOf("userName='") + 10;
+                int end = username.indexOf("'", start);
+                if (start > 0 && end > start) {
+                    username = username.substring(start, end);
+                }
+            }
+            return employeeRepository.findByLogin(username);
         }
         return null;
     }
@@ -79,7 +72,7 @@ public class ReportController {
      * @param riskCategory Optional risk category filter
      * @param riskLevel Optional risk level filter
      * @param sortBy Optional sort field
-     * @param token JWT token (optional)
+     * @param token JWT token (optional, not used directly as authentication is handled by JwtAuthFilter)
      * @return Report data
      */
     @GetMapping
@@ -90,7 +83,8 @@ public class ReportController {
             @RequestParam(required = false) String sortBy,
             @RequestParam(required = false) String token) {
         
-        Employee employee = token != null ? getUserFromToken(token) : getCurrentUser();
+        // Use security context that was set by JwtAuthFilter
+        Employee employee = getCurrentUser();
         if (employee == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(createErrorResponse("Nieautoryzowany dostęp"));
@@ -213,12 +207,13 @@ public class ReportController {
     /**
      * Get details of a specific compliance area
      * @param id Area ID
-     * @param token JWT token (optional)
+     * @param token JWT token (optional, not used directly as authentication is handled by JwtAuthFilter)
      * @return Area details
      */
     @GetMapping("/areas/{id}")
     public ResponseEntity<?> getAreaDetails(@PathVariable Long id, @RequestParam(required = false) String token) {
-        Employee employee = token != null ? getUserFromToken(token) : getCurrentUser();
+        // Use security context that was set by JwtAuthFilter
+        Employee employee = getCurrentUser();
         if (employee == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(createErrorResponse("Nieautoryzowany dostęp"));
@@ -295,12 +290,13 @@ public class ReportController {
     /**
      * Export report to specified format
      * @param format Export format (pdf, xlsx)
-     * @param token JWT token (optional)
+     * @param token JWT token (optional, not used directly as authentication is handled by JwtAuthFilter)
      * @return Export file
      */
     @GetMapping("/export")
     public ResponseEntity<?> exportReport(@RequestParam String format, @RequestParam(required = false) String token) {
-        Employee employee = token != null ? getUserFromToken(token) : getCurrentUser();
+        // Use security context that was set by JwtAuthFilter
+        Employee employee = getCurrentUser();
         if (employee == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(createErrorResponse("Nieautoryzowany dostęp"));
@@ -352,6 +348,28 @@ public class ReportController {
         return "zgodny";
     }
 
+    private Map<String, Object> convertToComplianceAreaSummary(ComplianceArea area) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("id", area.getId());
+        result.put("name", area.getName());
+        result.put("score", area.getScore());
+        result.put("risk", area.getRisk());
+        result.put("lastUpdated", area.getLastUpdated());
+        return result;
+    }
+
+    private Map<String, Object> convertToRecommendationSummary(Recommendation recommendation) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("id", recommendation.getId());
+        result.put("text", recommendation.getText());
+        result.put("priority", recommendation.getPriority());
+        result.put("status", recommendation.getStatus());
+        result.put("dueDate", recommendation.getDueDate());
+        result.put("estimatedTime", getEstimatedTime(recommendation.getPriority()));
+        result.put("estimatedCost", getEstimatedCost(recommendation.getPriority()));
+        return result;
+    }
+
     private String getEstimatedTime(String priority) {
         // Implementation would go here
         return "2-4 tygodnie";
@@ -362,65 +380,148 @@ public class ReportController {
         return "5000-10000 PLN";
     }
 
-    private Map<String, Object> convertToComplianceAreaSummary(ComplianceArea area) {
-        // Implementation would go here
-        Map<String, Object> result = new HashMap<>();
-        result.put("id", area.getId());
-        result.put("name", area.getName());
-        result.put("score", area.getScore());
-        result.put("risk", area.getRisk());
-        return result;
-    }
-
-    private Map<String, Object> convertToRecommendationSummary(Recommendation recommendation) {
-        // Implementation would go here
-        Map<String, Object> result = new HashMap<>();
-        result.put("id", recommendation.getId());
-        result.put("area", "Obszar związany z rekomendacją");
-        result.put("action", recommendation.getText());
-        result.put("priority", recommendation.getPriority());
-        result.put("estimatedTime", getEstimatedTime(recommendation.getPriority()));
-        result.put("estimatedCost", getEstimatedCost(recommendation.getPriority()));
-        return result;
-    }
-
-    private List<Map<String, Object>> generateUpcomingDeadlines(List<Recommendation> recommendations) {
-        // Implementation would go here
-        List<Map<String, Object>> result = new ArrayList<>();
-        // Sample implementation
-        for (int i = 0; i < Math.min(5, recommendations.size()); i++) {
-            Map<String, Object> deadline = new HashMap<>();
-            deadline.put("id", i + 1);
-            deadline.put("task", "Zadanie " + (i + 1));
-            deadline.put("deadline", LocalDate.now().plusDays(i * 7));
-            deadline.put("daysLeft", i * 7);
-            result.add(deadline);
-        }
-        return result;
-    }
-
     private Map<String, Object> generateRiskAssessment(List<ComplianceArea> areas) {
-        // Implementation would go here
         Map<String, Object> result = new HashMap<>();
-        result.put("beforeMitigation", Arrays.asList(70, 60, 50, 40, 30));
-        result.put("afterMitigation", Arrays.asList(40, 30, 20, 10, 5));
+        
+        // Count areas by risk level
+        int highRisk = 0;
+        int mediumRisk = 0;
+        int lowRisk = 0;
+        
+        for (ComplianceArea area : areas) {
+            switch (area.getRisk().toLowerCase()) {
+                case "wysoki":
+                    highRisk++;
+                    break;
+                case "średni":
+                    mediumRisk++;
+                    break;
+                case "niski":
+                    lowRisk++;
+                    break;
+            }
+        }
+        
+        result.put("highRisk", highRisk);
+        result.put("mediumRisk", mediumRisk);
+        result.put("lowRisk", lowRisk);
+        
+        // Overall risk score (0-100)
+        int totalAreas = highRisk + mediumRisk + lowRisk;
+        int riskScore = totalAreas > 0 
+            ? (highRisk * 100 + mediumRisk * 50 + lowRisk * 10) / totalAreas 
+            : 0;
+        result.put("overallRiskScore", riskScore);
+        
+        // Risk categories
+        List<Map<String, Object>> riskCategories = new ArrayList<>();
+        String[] categories = {"Dane osobowe", "Bezpieczeństwo IT", "Procesy biznesowe", "Dokumentacja", "Szkolenia"};
+        Random random = new Random();
+        
+        for (String category : categories) {
+            Map<String, Object> cat = new HashMap<>();
+            cat.put("name", category);
+            cat.put("score", 50 + random.nextInt(50)); // Random score between 50-100
+            riskCategories.add(cat);
+        }
+        result.put("riskCategories", riskCategories);
+        
         return result;
     }
 
     private Map<String, Object> generateTrends() {
-        // Implementation would go here
         Map<String, Object> result = new HashMap<>();
-        result.put("labels", Arrays.asList("Styczeń", "Luty", "Marzec", "Kwiecień", "Maj", "Czerwiec"));
-        result.put("data", Arrays.asList(65, 70, 75, 80, 85, 90));
+        
+        // Compliance score trend
+        List<Map<String, Object>> complianceScoreTrend = new ArrayList<>();
+        LocalDate date = LocalDate.now();
+        int score = 75;
+        Random random = new Random();
+        
+        for (int i = 5; i >= 0; i--) {
+            Map<String, Object> point = new HashMap<>();
+            point.put("date", date.minusMonths(i));
+            point.put("score", Math.min(100, Math.max(0, score + random.nextInt(10) - 5)));
+            complianceScoreTrend.add(point);
+            score = (int) point.get("score");
+        }
+        result.put("complianceScoreTrend", complianceScoreTrend);
+        
+        // Risk level trend
+        List<Map<String, Object>> riskLevelTrend = new ArrayList<>();
+        int highRisk = 5;
+        int mediumRisk = 8;
+        int lowRisk = 12;
+        
+        for (int i = 5; i >= 0; i--) {
+            Map<String, Object> point = new HashMap<>();
+            point.put("date", date.minusMonths(i));
+            point.put("highRisk", Math.max(0, highRisk - i/2));
+            point.put("mediumRisk", Math.max(0, mediumRisk - i/3));
+            point.put("lowRisk", Math.max(0, lowRisk - i/4));
+            riskLevelTrend.add(point);
+        }
+        result.put("riskLevelTrend", riskLevelTrend);
+        
+        return result;
+    }
+
+    private List<Map<String, Object>> generateUpcomingDeadlines(List<Recommendation> recommendations) {
+        List<Map<String, Object>> result = new ArrayList<>();
+        LocalDate today = LocalDate.now();
+        
+        // Filter recommendations with due dates in the next 30 days
+        List<Recommendation> upcomingRecommendations = recommendations.stream()
+                .filter(rec -> rec.getDueDate() != null && 
+                       rec.getDueDate().isAfter(today) && 
+                       rec.getDueDate().isBefore(today.plusDays(30)))
+                .collect(Collectors.toList());
+        
+        // Sort by due date
+        upcomingRecommendations.sort(Comparator.comparing(Recommendation::getDueDate));
+        
+        // Convert to response format
+        for (Recommendation rec : upcomingRecommendations) {
+            Map<String, Object> deadline = new HashMap<>();
+            deadline.put("id", rec.getId());
+            deadline.put("text", rec.getText());
+            deadline.put("dueDate", rec.getDueDate());
+            deadline.put("priority", rec.getPriority());
+            deadline.put("daysRemaining", today.until(rec.getDueDate()).getDays());
+            result.add(deadline);
+        }
+        
         return result;
     }
 
     private Map<String, Object> generateBenchmarks(List<ComplianceArea> areas) {
-        // Implementation would go here
         Map<String, Object> result = new HashMap<>();
-        result.put("industry", 75);
-        result.put("yourScore", 85);
-        result.put("topPerformer", 95);
+        
+        // Calculate average score
+        double avgScore = areas.stream()
+                .mapToInt(ComplianceArea::getScore)
+                .average()
+                .orElse(0);
+        
+        result.put("yourScore", avgScore);
+        result.put("industryAverage", 65.0);
+        result.put("topPerformers", 85.0);
+        
+        // Benchmark by category
+        List<Map<String, Object>> categoryBenchmarks = new ArrayList<>();
+        String[] categories = {"Dane osobowe", "Bezpieczeństwo IT", "Procesy biznesowe", "Dokumentacja", "Szkolenia"};
+        Random random = new Random();
+        
+        for (String category : categories) {
+            Map<String, Object> cat = new HashMap<>();
+            cat.put("name", category);
+            cat.put("yourScore", 50 + random.nextInt(50));
+            cat.put("industryAverage", 50 + random.nextInt(30));
+            cat.put("topPerformers", 80 + random.nextInt(20));
+            categoryBenchmarks.add(cat);
+        }
+        result.put("categories", categoryBenchmarks);
+        
         return result;
     }
 }

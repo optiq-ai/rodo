@@ -41,42 +41,36 @@ public class UserController {
     }
 
     /**
-     * Get the current authenticated user from token parameter
-     * @param token JWT token
-     * @return Employee object or null
-     */
-    private Employee getUserFromToken(String token) {
-        try {
-            Authentication authentication = userAuthProviderParam.validateToken(token);
-            if (authentication != null && authentication.getName() != null) {
-                return employeeRepository.findByLogin(authentication.getName());
-            }
-        } catch (Exception e) {
-            // Token validation failed
-        }
-        return null;
-    }
-
-    /**
      * Get the current authenticated user
      * @return Employee object or null
      */
     private Employee getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.getName() != null) {
-            return employeeRepository.findByLogin(authentication.getName());
+            String username = authentication.getName();
+            // Sprawdź, czy nazwa użytkownika nie jest obiektem Employee
+            if (username.contains("Employee{")) {
+                // Wyciągnij userName z obiektu Employee
+                int start = username.indexOf("userName='") + 10;
+                int end = username.indexOf("'", start);
+                if (start > 0 && end > start) {
+                    username = username.substring(start, end);
+                }
+            }
+            return employeeRepository.findByLogin(username);
         }
         return null;
     }
 
     /**
      * Get user profile information
-     * @param token JWT token (optional)
+     * @param token JWT token (optional, not used directly as authentication is handled by JwtAuthFilter)
      * @return ResponseEntity with user profile data
      */
     @GetMapping("/profile")
     public ResponseEntity<?> getUserProfile(@RequestParam(required = false) String token) {
-        Employee employee = token != null ? getUserFromToken(token) : getCurrentUser();
+        // Use security context that was set by JwtAuthFilter
+        Employee employee = getCurrentUser();
         if (employee == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(createErrorResponse("Nieautoryzowany dostęp"));
@@ -100,13 +94,14 @@ public class UserController {
     /**
      * Update user profile information
      * @param profileDto User profile data to update
-     * @param token JWT token (optional)
+     * @param token JWT token (optional, not used directly as authentication is handled by JwtAuthFilter)
      * @return ResponseEntity with success or error message
      */
     @PutMapping("/profile")
     public ResponseEntity<?> updateUserProfile(@Valid @RequestBody UserProfileDto profileDto, 
                                               @RequestParam(required = false) String token) {
-        Employee employee = token != null ? getUserFromToken(token) : getCurrentUser();
+        // Use security context that was set by JwtAuthFilter
+        Employee employee = getCurrentUser();
         if (employee == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(createErrorResponse("Nieautoryzowany dostęp"));
@@ -150,13 +145,14 @@ public class UserController {
     /**
      * Change user password
      * @param passwordChangeDto Password change data
-     * @param token JWT token (optional)
+     * @param token JWT token (optional, not used directly as authentication is handled by JwtAuthFilter)
      * @return ResponseEntity with success or error message
      */
     @PutMapping("/password")
     public ResponseEntity<?> changePassword(@Valid @RequestBody PasswordChangeDto passwordChangeDto,
                                            @RequestParam(required = false) String token) {
-        Employee employee = token != null ? getUserFromToken(token) : getCurrentUser();
+        // Use security context that was set by JwtAuthFilter
+        Employee employee = getCurrentUser();
         if (employee == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(createErrorResponse("Nieautoryzowany dostęp"));

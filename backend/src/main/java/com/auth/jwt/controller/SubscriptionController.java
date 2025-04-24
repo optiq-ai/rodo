@@ -33,42 +33,36 @@ public class SubscriptionController {
     }
 
     /**
-     * Get the current authenticated user from token parameter
-     * @param token JWT token
-     * @return Employee object or null
-     */
-    private Employee getUserFromToken(String token) {
-        try {
-            Authentication authentication = userAuthProviderParam.validateToken(token);
-            if (authentication != null && authentication.getName() != null) {
-                return employeeRepository.findByLogin(authentication.getName());
-            }
-        } catch (Exception e) {
-            // Token validation failed
-        }
-        return null;
-    }
-
-    /**
      * Get the current authenticated user
      * @return Employee object or null
      */
     private Employee getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.getName() != null) {
-            return employeeRepository.findByLogin(authentication.getName());
+            String username = authentication.getName();
+            // Sprawdź, czy nazwa użytkownika nie jest obiektem Employee
+            if (username.contains("Employee{")) {
+                // Wyciągnij userName z obiektu Employee
+                int start = username.indexOf("userName='") + 10;
+                int end = username.indexOf("'", start);
+                if (start > 0 && end > start) {
+                    username = username.substring(start, end);
+                }
+            }
+            return employeeRepository.findByLogin(username);
         }
         return null;
     }
 
     /**
      * Get subscription data for the current user
-     * @param token JWT token (optional)
+     * @param token JWT token (optional, not used directly as authentication is handled by JwtAuthFilter)
      * @return Subscription data
      */
     @GetMapping
     public ResponseEntity<?> getSubscription(@RequestParam(required = false) String token) {
-        Employee employee = token != null ? getUserFromToken(token) : getCurrentUser();
+        // Use security context that was set by JwtAuthFilter
+        Employee employee = getCurrentUser();
         if (employee == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(createErrorResponse("Nieautoryzowany dostęp"));
@@ -114,13 +108,14 @@ public class SubscriptionController {
     /**
      * Change subscription plan
      * @param planData Plan data
-     * @param token JWT token (optional)
+     * @param token JWT token (optional, not used directly as authentication is handled by JwtAuthFilter)
      * @return Updated subscription data
      */
     @PutMapping("/plan")
     public ResponseEntity<?> changePlan(@RequestBody Map<String, String> planData, 
                                        @RequestParam(required = false) String token) {
-        Employee employee = token != null ? getUserFromToken(token) : getCurrentUser();
+        // Use security context that was set by JwtAuthFilter
+        Employee employee = getCurrentUser();
         if (employee == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(createErrorResponse("Nieautoryzowany dostęp"));
@@ -187,12 +182,13 @@ public class SubscriptionController {
 
     /**
      * Cancel subscription
-     * @param token JWT token (optional)
+     * @param token JWT token (optional, not used directly as authentication is handled by JwtAuthFilter)
      * @return Cancellation confirmation
      */
     @PutMapping("/cancel")
     public ResponseEntity<?> cancelSubscription(@RequestParam(required = false) String token) {
-        Employee employee = token != null ? getUserFromToken(token) : getCurrentUser();
+        // Use security context that was set by JwtAuthFilter
+        Employee employee = getCurrentUser();
         if (employee == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(createErrorResponse("Nieautoryzowany dostęp"));
@@ -236,12 +232,13 @@ public class SubscriptionController {
 
     /**
      * Get available subscription plans
-     * @param token JWT token (optional)
+     * @param token JWT token (optional, not used directly as authentication is handled by JwtAuthFilter)
      * @return List of available plans
      */
     @GetMapping("/plans")
     public ResponseEntity<?> getAvailablePlans(@RequestParam(required = false) String token) {
-        Employee employee = token != null ? getUserFromToken(token) : getCurrentUser();
+        // Use security context that was set by JwtAuthFilter
+        Employee employee = getCurrentUser();
         if (employee == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(createErrorResponse("Nieautoryzowany dostęp"));
