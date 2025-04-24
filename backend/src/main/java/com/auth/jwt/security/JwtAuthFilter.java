@@ -35,34 +35,48 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             return;
         }
         
+        System.out.println("Processing request: " + request.getMethod() + " " + request.getRequestURI() + "?" + request.getQueryString());
+        
         // Check Authorization header
         String header = request.getHeader(HttpHeaders.AUTHORIZATION);
+        System.out.println("Authorization Header: " + header);
+        
         String token = null;
         
         if (header != null && header.startsWith("Bearer ")) {
             token = header.substring(7);
+            System.out.println("Token from header: " + token);
         } else {
             // If token not in header, check request parameter
             token = request.getParameter("token");
+            System.out.println("Token from parameter: " + token);
         }
         
         if (token != null) {
             try {
+                System.out.println("Attempting to validate token: " + token);
                 var authentication = userAuthProvider.validateToken(token);
                 if (authentication != null) {
                     ((AbstractAuthenticationToken) authentication)
                             .setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authentication);
-                    System.out.println("Token is valid");
+                    System.out.println("Token is valid, user authenticated: " + authentication.getName());
+                } else {
+                    System.out.println("Token validation returned null authentication");
+                    SecurityContextHolder.clearContext();
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Nieautoryzowany dostęp");
+                    return;
                 }
             } catch (RuntimeException e) {
                 System.out.println("Token validation failed: " + e.getMessage());
+                e.printStackTrace();
                 SecurityContextHolder.clearContext();
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Nieautoryzowany dostęp");
                 return;
             }
         } else {
             // No token found in either header or parameter
+            System.out.println("No token found in either header or parameter");
             SecurityContextHolder.clearContext();
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Wymagane uwierzytelnienie");
             return;
