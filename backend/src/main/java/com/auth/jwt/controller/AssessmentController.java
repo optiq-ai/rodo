@@ -60,7 +60,17 @@ public class AssessmentController {
     private Employee getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.getName() != null) {
-            return employeeRepository.findByLogin(authentication.getName());
+            String username = authentication.getName();
+            // Sprawdź, czy nazwa użytkownika nie jest obiektem Employee
+            if (username.contains("Employee{")) {
+                // Wyciągnij userName z obiektu Employee
+                int start = username.indexOf("userName='") + 10;
+                int end = username.indexOf("'", start);
+                if (start > 0 && end > start) {
+                    username = username.substring(start, end);
+                }
+            }
+            return employeeRepository.findByLogin(username);
         }
         return null;
     }
