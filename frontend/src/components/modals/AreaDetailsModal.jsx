@@ -1,24 +1,23 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Modal, Button, Row, Col, Table, Badge, ProgressBar, ListGroup, Card } from 'react-bootstrap';
 import { Line } from 'react-chartjs-2';
-import { reportAPI } from '../services/api';
-import { useState, useEffect } from 'react';
+import { reportAPI } from '../../services/api';
 
 /**
  * Modal wyświetlający szczegółowe informacje o wybranym obszarze RODO
  */
 const AreaDetailsModal = ({ show, onHide, area }) => {
-  // Jeśli nie ma danych obszaru, nie renderuj nic
-  if (!area) return null;
-
   const [areaDetails, setAreaDetails] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Pobieranie szczegółowych danych obszaru z API
+  // Jeśli nie ma danych obszaru, nie pobieraj szczegółów
   useEffect(() => {
     const fetchAreaDetails = async () => {
-      if (!area.id) return;
+      if (!area || !area.id) {
+        setLoading(false);
+        return;
+      }
       
       try {
         setLoading(true);
@@ -33,8 +32,13 @@ const AreaDetailsModal = ({ show, onHide, area }) => {
       }
     };
 
-    fetchAreaDetails();
-  }, [area.id]);
+    if (show) {
+      fetchAreaDetails();
+    }
+  }, [area, show]);
+
+  // Jeśli nie ma danych obszaru, nie renderuj nic
+  if (!area) return null;
 
   // Dane dla wykresu postępu w czasie
   const progressChartData = {
@@ -82,7 +86,7 @@ const AreaDetailsModal = ({ show, onHide, area }) => {
   };
 
   // Jeśli trwa ładowanie, wyświetl komunikat
-  if (loading && !areaDetails) {
+  if (loading) {
     return (
       <Modal show={show} onHide={onHide} size="lg" centered>
         <Modal.Header closeButton>
