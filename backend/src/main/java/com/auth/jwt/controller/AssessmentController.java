@@ -409,9 +409,38 @@ public class AssessmentController {
      * @return Assessment summary
      */
     private Map<String, Object> convertToAssessmentSummary(Assessment assessment) {
-        // Existing implementation
         Map<String, Object> result = new HashMap<>();
-        // ... (existing code)
+        result.put("id", assessment.getId());
+        result.put("name", assessment.getName());
+        result.put("description", assessment.getDescription());
+        result.put("status", assessment.getStatus());
+        result.put("createdAt", assessment.getCreatedAt());
+        result.put("updatedAt", assessment.getUpdatedAt());
+        
+        // Dodaj informacje o liczbie rozdziałów, obszarów itp.
+        if (assessment.getChapters() != null) {
+            result.put("chaptersCount", assessment.getChapters().size());
+            
+            int areasCount = 0;
+            int requirementsCount = 0;
+            for (Chapter chapter : assessment.getChapters()) {
+                if (chapter.getAreas() != null) {
+                    areasCount += chapter.getAreas().size();
+                    for (Area area : chapter.getAreas()) {
+                        if (area.getRequirements() != null) {
+                            requirementsCount += area.getRequirements().size();
+                        }
+                    }
+                }
+            }
+            result.put("areasCount", areasCount);
+            result.put("requirementsCount", requirementsCount);
+        } else {
+            result.put("chaptersCount", 0);
+            result.put("areasCount", 0);
+            result.put("requirementsCount", 0);
+        }
+        
         return result;
     }
 
@@ -421,9 +450,58 @@ public class AssessmentController {
      * @return Detailed assessment
      */
     private Map<String, Object> convertToDetailedAssessment(Assessment assessment) {
-        // Existing implementation
         Map<String, Object> result = new HashMap<>();
-        // ... (existing code)
+        result.put("id", assessment.getId());
+        result.put("name", assessment.getName());
+        result.put("description", assessment.getDescription());
+        result.put("status", assessment.getStatus());
+        result.put("createdAt", assessment.getCreatedAt());
+        result.put("updatedAt", assessment.getUpdatedAt());
+        
+        // Dodaj informacje o rozdziałach, obszarach i wymaganiach
+        List<Map<String, Object>> chaptersData = new ArrayList<>();
+        if (assessment.getChapters() != null) {
+            for (Chapter chapter : assessment.getChapters()) {
+                Map<String, Object> chapterData = new HashMap<>();
+                chapterData.put("id", chapter.getId());
+                chapterData.put("name", chapter.getName());
+                chapterData.put("description", chapter.getDescription());
+                chapterData.put("order", chapter.getOrder());
+                
+                List<Map<String, Object>> areasData = new ArrayList<>();
+                if (chapter.getAreas() != null) {
+                    for (Area area : chapter.getAreas()) {
+                        Map<String, Object> areaData = new HashMap<>();
+                        areaData.put("id", area.getId());
+                        areaData.put("name", area.getName());
+                        areaData.put("description", area.getDescription());
+                        areaData.put("order", area.getOrder());
+                        areaData.put("score", area.getScore());
+                        
+                        List<Map<String, Object>> requirementsData = new ArrayList<>();
+                        if (area.getRequirements() != null) {
+                            for (Requirement requirement : area.getRequirements()) {
+                                Map<String, Object> requirementData = new HashMap<>();
+                                requirementData.put("id", requirement.getId());
+                                requirementData.put("name", requirement.getName());
+                                requirementData.put("description", requirement.getDescription());
+                                requirementData.put("order", requirement.getOrder());
+                                requirementData.put("status", requirement.getStatus());
+                                requirementData.put("comment", requirement.getComment());
+                                
+                                requirementsData.add(requirementData);
+                            }
+                        }
+                        areaData.put("requirements", requirementsData);
+                        areasData.add(areaData);
+                    }
+                }
+                chapterData.put("areas", areasData);
+                chaptersData.add(chapterData);
+            }
+        }
+        result.put("chapters", chaptersData);
+        
         return result;
     }
 }
