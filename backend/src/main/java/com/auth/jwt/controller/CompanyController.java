@@ -5,6 +5,7 @@ import com.auth.jwt.data.entity.company.Company;
 import com.auth.jwt.data.entity.employee.Employee;
 import com.auth.jwt.data.repository.CompanyRepository;
 import com.auth.jwt.data.repository.employee.EmployeeJpaRepository;
+import com.auth.jwt.security.UserAuthProviderParam;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -23,12 +24,32 @@ public class CompanyController {
 
     private final EmployeeJpaRepository employeeRepository;
     private final CompanyRepository companyRepository;
+    private final UserAuthProviderParam userAuthProviderParam;
 
     @Autowired
     public CompanyController(EmployeeJpaRepository employeeRepository, 
-                             CompanyRepository companyRepository) {
+                             CompanyRepository companyRepository,
+                             UserAuthProviderParam userAuthProviderParam) {
         this.employeeRepository = employeeRepository;
         this.companyRepository = companyRepository;
+        this.userAuthProviderParam = userAuthProviderParam;
+    }
+
+    /**
+     * Get the current authenticated user from token parameter
+     * @param token JWT token
+     * @return Employee object or null
+     */
+    private Employee getUserFromToken(String token) {
+        try {
+            Authentication authentication = userAuthProviderParam.validateToken(token);
+            if (authentication != null && authentication.getName() != null) {
+                return employeeRepository.findByLogin(authentication.getName());
+            }
+        } catch (Exception e) {
+            // Token validation failed
+        }
+        return null;
     }
 
     /**
@@ -45,11 +66,12 @@ public class CompanyController {
 
     /**
      * Get company information for the current user
+     * @param token JWT token (optional)
      * @return ResponseEntity with company data
      */
     @GetMapping("/company")
-    public ResponseEntity<?> getCompanyInfo() {
-        Employee employee = getCurrentUser();
+    public ResponseEntity<?> getCompanyInfo(@RequestParam(required = false) String token) {
+        Employee employee = token != null ? getUserFromToken(token) : getCurrentUser();
         if (employee == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(createErrorResponse("Nieautoryzowany dostęp"));
@@ -79,11 +101,13 @@ public class CompanyController {
     /**
      * Update company information for the current user
      * @param companyDto Company data to update
+     * @param token JWT token (optional)
      * @return ResponseEntity with success or error message
      */
     @PutMapping("/company")
-    public ResponseEntity<?> updateCompanyInfo(@Valid @RequestBody CompanyDto companyDto) {
-        Employee employee = getCurrentUser();
+    public ResponseEntity<?> updateCompanyInfo(@Valid @RequestBody CompanyDto companyDto,
+                                              @RequestParam(required = false) String token) {
+        Employee employee = token != null ? getUserFromToken(token) : getCurrentUser();
         if (employee == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(createErrorResponse("Nieautoryzowany dostęp"));

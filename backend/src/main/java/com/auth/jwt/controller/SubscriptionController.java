@@ -4,6 +4,7 @@ import com.auth.jwt.data.entity.employee.Employee;
 import com.auth.jwt.data.entity.subscription.Subscription;
 import com.auth.jwt.data.repository.SubscriptionRepository;
 import com.auth.jwt.data.repository.employee.EmployeeJpaRepository;
+import com.auth.jwt.security.UserAuthProviderParam;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,12 +21,32 @@ public class SubscriptionController {
 
     private final EmployeeJpaRepository employeeRepository;
     private final SubscriptionRepository subscriptionRepository;
+    private final UserAuthProviderParam userAuthProviderParam;
 
     @Autowired
     public SubscriptionController(EmployeeJpaRepository employeeRepository,
-                                 SubscriptionRepository subscriptionRepository) {
+                                 SubscriptionRepository subscriptionRepository,
+                                 UserAuthProviderParam userAuthProviderParam) {
         this.employeeRepository = employeeRepository;
         this.subscriptionRepository = subscriptionRepository;
+        this.userAuthProviderParam = userAuthProviderParam;
+    }
+
+    /**
+     * Get the current authenticated user from token parameter
+     * @param token JWT token
+     * @return Employee object or null
+     */
+    private Employee getUserFromToken(String token) {
+        try {
+            Authentication authentication = userAuthProviderParam.validateToken(token);
+            if (authentication != null && authentication.getName() != null) {
+                return employeeRepository.findByLogin(authentication.getName());
+            }
+        } catch (Exception e) {
+            // Token validation failed
+        }
+        return null;
     }
 
     /**
@@ -42,11 +63,12 @@ public class SubscriptionController {
 
     /**
      * Get subscription data for the current user
+     * @param token JWT token (optional)
      * @return Subscription data
      */
     @GetMapping
-    public ResponseEntity<?> getSubscription() {
-        Employee employee = getCurrentUser();
+    public ResponseEntity<?> getSubscription(@RequestParam(required = false) String token) {
+        Employee employee = token != null ? getUserFromToken(token) : getCurrentUser();
         if (employee == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(createErrorResponse("Nieautoryzowany dostęp"));
@@ -92,11 +114,13 @@ public class SubscriptionController {
     /**
      * Change subscription plan
      * @param planData Plan data
+     * @param token JWT token (optional)
      * @return Updated subscription data
      */
     @PutMapping("/plan")
-    public ResponseEntity<?> changePlan(@RequestBody Map<String, String> planData) {
-        Employee employee = getCurrentUser();
+    public ResponseEntity<?> changePlan(@RequestBody Map<String, String> planData, 
+                                       @RequestParam(required = false) String token) {
+        Employee employee = token != null ? getUserFromToken(token) : getCurrentUser();
         if (employee == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(createErrorResponse("Nieautoryzowany dostęp"));
@@ -163,11 +187,12 @@ public class SubscriptionController {
 
     /**
      * Cancel subscription
+     * @param token JWT token (optional)
      * @return Cancellation confirmation
      */
     @PutMapping("/cancel")
-    public ResponseEntity<?> cancelSubscription() {
-        Employee employee = getCurrentUser();
+    public ResponseEntity<?> cancelSubscription(@RequestParam(required = false) String token) {
+        Employee employee = token != null ? getUserFromToken(token) : getCurrentUser();
         if (employee == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(createErrorResponse("Nieautoryzowany dostęp"));
@@ -211,11 +236,12 @@ public class SubscriptionController {
 
     /**
      * Get available subscription plans
+     * @param token JWT token (optional)
      * @return List of available plans
      */
     @GetMapping("/plans")
-    public ResponseEntity<?> getAvailablePlans() {
-        Employee employee = getCurrentUser();
+    public ResponseEntity<?> getAvailablePlans(@RequestParam(required = false) String token) {
+        Employee employee = token != null ? getUserFromToken(token) : getCurrentUser();
         if (employee == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(createErrorResponse("Nieautoryzowany dostęp"));
@@ -237,6 +263,7 @@ public class SubscriptionController {
             basicFeatures.add("Maksymalnie 3 oceny");
             basicFeatures.add("Podstawowe raporty");
             basicFeatures.add("Wsparcie e-mail");
+            basicPlan.put("features", basicFeatures);
             plans.add(basicPlan);
             
             // Premium plan

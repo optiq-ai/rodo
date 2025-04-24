@@ -6,6 +6,7 @@ import com.auth.jwt.data.entity.employee.Employee;
 import com.auth.jwt.data.entity.profile.UserProfile;
 import com.auth.jwt.data.repository.UserProfileRepository;
 import com.auth.jwt.data.repository.employee.EmployeeJpaRepository;
+import com.auth.jwt.security.UserAuthProviderParam;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -26,14 +27,34 @@ public class UserController {
     private final EmployeeJpaRepository employeeRepository;
     private final UserProfileRepository userProfileRepository;
     private final PasswordEncoder passwordEncoder;
+    private final UserAuthProviderParam userAuthProviderParam;
 
     @Autowired
     public UserController(EmployeeJpaRepository employeeRepository, 
                           UserProfileRepository userProfileRepository,
-                          PasswordEncoder passwordEncoder) {
+                          PasswordEncoder passwordEncoder,
+                          UserAuthProviderParam userAuthProviderParam) {
         this.employeeRepository = employeeRepository;
         this.userProfileRepository = userProfileRepository;
         this.passwordEncoder = passwordEncoder;
+        this.userAuthProviderParam = userAuthProviderParam;
+    }
+
+    /**
+     * Get the current authenticated user from token parameter
+     * @param token JWT token
+     * @return Employee object or null
+     */
+    private Employee getUserFromToken(String token) {
+        try {
+            Authentication authentication = userAuthProviderParam.validateToken(token);
+            if (authentication != null && authentication.getName() != null) {
+                return employeeRepository.findByLogin(authentication.getName());
+            }
+        } catch (Exception e) {
+            // Token validation failed
+        }
+        return null;
     }
 
     /**
@@ -50,11 +71,12 @@ public class UserController {
 
     /**
      * Get user profile information
+     * @param token JWT token (optional)
      * @return ResponseEntity with user profile data
      */
     @GetMapping("/profile")
-    public ResponseEntity<?> getUserProfile() {
-        Employee employee = getCurrentUser();
+    public ResponseEntity<?> getUserProfile(@RequestParam(required = false) String token) {
+        Employee employee = token != null ? getUserFromToken(token) : getCurrentUser();
         if (employee == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(createErrorResponse("Nieautoryzowany dostęp"));
@@ -78,11 +100,13 @@ public class UserController {
     /**
      * Update user profile information
      * @param profileDto User profile data to update
+     * @param token JWT token (optional)
      * @return ResponseEntity with success or error message
      */
     @PutMapping("/profile")
-    public ResponseEntity<?> updateUserProfile(@Valid @RequestBody UserProfileDto profileDto) {
-        Employee employee = getCurrentUser();
+    public ResponseEntity<?> updateUserProfile(@Valid @RequestBody UserProfileDto profileDto, 
+                                              @RequestParam(required = false) String token) {
+        Employee employee = token != null ? getUserFromToken(token) : getCurrentUser();
         if (employee == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(createErrorResponse("Nieautoryzowany dostęp"));
@@ -126,11 +150,13 @@ public class UserController {
     /**
      * Change user password
      * @param passwordChangeDto Password change data
+     * @param token JWT token (optional)
      * @return ResponseEntity with success or error message
      */
     @PutMapping("/password")
-    public ResponseEntity<?> changePassword(@Valid @RequestBody PasswordChangeDto passwordChangeDto) {
-        Employee employee = getCurrentUser();
+    public ResponseEntity<?> changePassword(@Valid @RequestBody PasswordChangeDto passwordChangeDto,
+                                           @RequestParam(required = false) String token) {
+        Employee employee = token != null ? getUserFromToken(token) : getCurrentUser();
         if (employee == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(createErrorResponse("Nieautoryzowany dostęp"));
